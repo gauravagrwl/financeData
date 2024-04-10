@@ -11,3 +11,12 @@ spring:
   data:
     mongodb:
       auto-index-creation: true
+
+  application:
+    name: Finance Data Api
+
+server:
+  servlet:
+    context-path: /financeData
+
+

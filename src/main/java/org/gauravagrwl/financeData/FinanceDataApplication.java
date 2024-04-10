@@ -18,4 +18,13 @@ public class FinanceDataApplication {
 		SpringApplication.run(FinanceDataApplication.class, args);
 	}
 
+	//TODO: Naming Conventions
+	//TODO: Java Docs
+	//TODO: Add API Docs
+	//TODO: Set user from SecurityContext
+	//TODO: Set Security Context (JWT or LDAP or SAML or OAuth)
+	//TODO: Exception Handling
+	//TODO: Set validations
+	//TODO: Add Swagger Documentations
+
 }

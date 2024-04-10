@@ -1,7 +1,6 @@
 server:
   port: 8084
-#  servlet:
-#    context-path: /api/portfoio
+
 
 
 
@@ -12,8 +11,6 @@ server:
 logging:
   level:
     root: DEBUG
-    org.mongodb.driver.protocol.command: DEBUG
-
 
 updateBalance: "10 * * * * *"
 updateCashFlowStatement: "10 * * * * *"
