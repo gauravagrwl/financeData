@@ -1,32 +1,26 @@
 spring:
-  datasource:
-    url: "jdbc:postgresql://localhost:5432/test_db?autoReconnect=true"
-    username: root
-    password: root
-    driverClassName: org.postgresql.Driver
-  jpa:
-    show-sql: true
-    generate-ddl: true
-    hibernate:
-      ddl-auto: create-drop
-
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: testDatabase
+      auto-index-creation: true
+  autoconfigure:
+    exclude: 'org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration'
   application:
-    name: Market Data API
+    name: Finance Data API
 
-springdoc:
-  swagger-ui:
-    operations-sorter: method
-  api-docs:
-    path: /api-docs
-  show-actuator: true
-  use-management-port: true
 
 management:
   endpoints:
     web:
       exposure:
         include: "*"
-  server:
-    port: 9092
 server:
   port: 8084
+  servlet:
+    context-path: /financeApp
+logging:
+  level:
+    root: INFO
+
+
