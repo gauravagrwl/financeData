@@ -1,0 +1,18 @@
+server:
+  port: 8082
+#  servlet:
+#    context-path: /api/portfoio
+
+
+    
+updateBalance: "10 * * * * *"
+updateCashFlowStatement: "10 * * * * *"
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: testDB
+      auto-index-creation: true
+  autoconfigure:
+    exclude: 'org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration'

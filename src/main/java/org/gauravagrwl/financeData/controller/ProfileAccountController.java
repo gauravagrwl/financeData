@@ -1,0 +1,165 @@
+package org.gauravagrwl.financeData.controller;
+
+import org.gauravagrwl.financeData.exception.AppException;
+import org.gauravagrwl.financeData.helper.AccountTypeEnum;
+import org.gauravagrwl.financeData.helper.AppHelper;
+import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
+import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
+import org.gauravagrwl.financeData.service.AccountService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(value = "/profileAccount")
+public class ProfileAccountController {
+
+    AccountService accountService;
+
+    Logger LOGGER = LoggerFactory.getLogger(ProfileAccountController.class);
+
+    public ProfileAccountController(AccountService accountService) {
+        this.accountService = accountService;
+    }
+
+    /**
+     *
+     * @param userName - Username
+     * @param accountDocument - account details
+     * @return - Success if added
+     */
+    @PostMapping(value = "/addAccount", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<String> addAccount(@RequestParam(required = false) String userName,
+            @RequestBody AccountDocument accountDocument) {
+        String userAccountId = accountService.addUserAccount(accountDocument, userName);
+        return ResponseEntity.ok("Account Added with Id: " + userAccountId);
+    }
+
+    /**
+     *
+     * @param userName - Username
+     * @param accountDocuments - list of account details
+     * @return - Success if added
+     */
+    @PostMapping(value = "/addAccounts", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Map<String, String>> addAccounts(@RequestParam(required = false) String userName,
+            @RequestBody List<AccountDocument> accountDocuments) {
+        Map<String, String> result = new HashMap<>();
+        accountDocuments.forEach(accountDocument -> {
+            try {
+                String userAccountId = accountService.addUserAccount(accountDocument, userName);
+                result.put(accountDocument.getAccountNumber(), "Account Added with Id: " + userAccountId);
+            } catch (Exception e) {
+                result.put(accountDocument.getAccountNumber(), "Account already exist.");
+            }
+        });
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 
+     * @param userName
+     * @param instCategory
+     * @param accountType
+     * @return
+     */
+    @GetMapping(value = "/getAccounts", produces = "application/json")
+    public ResponseEntity<List<AccountDocument>> getProfileAccounts(
+            @RequestParam(name = "userName", required = true) String userName,
+            @RequestParam(name = "institutionCategory", required = false) InstitutionCategoryEnum instCategory,
+            @RequestParam(name = "accountType", required = false) AccountTypeEnum accountType) {
+        List<AccountDocument> userAccounts = accountService.getUserAccounts(userName);
+        userAccounts.forEach(account -> account
+                .setAccountNumber(AppHelper.prependAccountNumber(account.getAccountNumber())));
+        return ResponseEntity.ok(userAccounts);
+    }
+
+    @GetMapping(value = "/getAccount", produces = "application/json")
+    public ResponseEntity<AccountDocument> getProfileAccount(
+            @RequestParam(name = "userName", required = true) String userName,
+            @RequestParam(name = "accountId", required = true) String accountId) {
+        AccountDocument accountDocument = accountService.getAccountDocument(accountId, userName);
+        return ResponseEntity.ok(accountDocument);
+    }
+
+    /**
+     * 
+     * @param userName
+     * @param accountId
+     * @return
+     */
+    @PatchMapping(value = "/toggleAccountActive")
+    public ResponseEntity<String> toggleAccountActiveStatus(
+            @RequestParam(name = "userName", required = true) String userName,
+            @RequestParam(name = "accountId", required = true) String accountId) {
+        accountService.toggleAccountActiveStatus(userName, accountId);
+        return ResponseEntity.ok("Account is toggled!");
+    }
+
+    @GetMapping(value = "/accountStatements")
+    public ResponseEntity<? super AccountStatementDocument> getAccountTransactionStatements(
+            @RequestParam(name = "userName", required = true) String userName,
+            @RequestParam(name = "accountId", required = true) String accountId,
+            @RequestParam(name = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
+            @RequestParam(name = "pageSize", required = false, defaultValue = "20") Integer pageSize) {
+        if (!accountService.isUserAccountExist(accountId, userName)) {
+            throw new AppException("User Account do not exists.");
+        }
+        AccountDocument accountDocument = accountService.getAccountDocument(accountId, userName);
+        List<? extends AccountStatementDocument> accountStatementDocumentList = accountService
+                .getAccountStatementDocuments(accountDocument, pageNumber, pageSize);
+        ;
+        // if
+        // (InstitutionCategoryEnum.BANKING.equals(accountDocument.getInstitutionCategory()))
+        // {
+        // @SuppressWarnings("unchecked")
+        // List<BankAccountStatementDocument> bankAcountStatementList =
+        // (List<BankAccountStatementDocument>) accountStatementDocumentList;
+        // bankAcountStatementList.sort(BankAccountStatementDocument.statementSort);
+        // return ResponseEntity.ok(bankAcountStatementList);
+        // }
+        return ResponseEntity.ok(accountStatementDocumentList);
+    }
+
+    @DeleteMapping(value = "/deleteTransaction")
+    public ResponseEntity<String> deleteAccountTransaction(
+            @RequestParam(name = "userName", required = true) String userName,
+            @RequestParam(name = "accountId", required = true) String accountId,
+            @RequestParam(name = "transactionId", required = true) String transactionId) {
+        AccountDocument accountDocument = accountService.getAccountDocument(accountId, userName);
+        if (accountService.deleteAccountStatementDocument(accountDocument, transactionId)) {
+            return ResponseEntity.ok("Document is removed.");
+        }
+        return ResponseEntity.ok("Document is not removed.");
+
+    }
+
+    @GetMapping(value = "/getAccountsType")
+    ResponseEntity<List<String>> getAccountType(
+            @RequestParam(name = "userName", required = true) String userName,
+            @RequestParam(name = "accountCategory", required = false) String accountCategory) {
+
+        List<String> accountTypeList = new ArrayList<>();
+        for (AccountTypeEnum accountType : AccountTypeEnum.values()) {
+            accountTypeList.add(accountType.name().toUpperCase());
+        }
+        return ResponseEntity.ok(accountTypeList);
+    }
+
+    @GetMapping(value = "/getInstitutionCategory")
+    ResponseEntity<List<String>> getAccountCategory() {
+        List<String> accountCatList = new ArrayList<>();
+        for (InstitutionCategoryEnum accountCat : InstitutionCategoryEnum.values()) {
+            accountCatList.add(accountCat.getCategoryName().toUpperCase());
+        }
+        return ResponseEntity.ok(accountCatList);
+    }
+
+}
