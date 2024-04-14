@@ -1,32 +1,34 @@
 package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
 
-import java.math.BigDecimal;
-
-import lombok.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
+import com.opencsv.bean.HeaderColumnNameMappingStrategyBuilder;
+import com.opencsv.bean.MappingStrategy;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
 import org.springframework.data.mongodb.core.query.Update;
+
+import java.math.BigDecimal;
 
 /**
  * This class supports below Institution Sub Category:
- * 
+ * <p>
  * CHECKING(InstitutionCategoryEnum.BANKING, "CHK", "101"),
  * SAVING(InstitutionCategoryEnum.BANKING, "SAV", "102"),
  * DEPOSIT(InstitutionCategoryEnum.BANKING, "DEP", "103"),
  * PPF(InstitutionCategoryEnum.BANKING, "PPF", "104"),
  * CREDIT(InstitutionCategoryEnum.BANKING, "CRE", "105"),
- * 
  */
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
 @Getter
+@Slf4j
 public class BankAccountDocument extends AccountDocument {
-
-    @Autowired
-    MongoTemplate mongoTemplate;
-
 
     // Account Calculated Balance
     private BigDecimal accountBalance = BigDecimal.ZERO;
@@ -41,6 +43,16 @@ public class BankAccountDocument extends AccountDocument {
     private String accountCodeType;
 
     @Override
+    public MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(
+            String mappingProfile) {
+        MappingStrategy<BankAccountStatementDocument> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<BankAccountStatementDocument>()
+                .withForceCorrectRecordLength(true).build();
+        headerColumnNameMappingStrategy.setProfile(mappingProfile);
+        headerColumnNameMappingStrategy.setType(BankAccountStatementDocument.class);
+        return headerColumnNameMappingStrategy;
+    }
+
+    @Override
     public BigDecimal getAccountStatementBalance() {
         return getAccountBalance();
     }
@@ -52,7 +64,9 @@ public class BankAccountDocument extends AccountDocument {
 
     @Override
     public BigDecimal calculateAccountBalance() {
+        log.info("Calculate balance");
         return null;
+
     }
 
 }

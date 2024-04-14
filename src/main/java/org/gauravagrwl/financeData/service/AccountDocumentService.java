@@ -14,7 +14,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
@@ -34,37 +33,40 @@ public class AccountDocumentService {
         this.mongoTemplate = mongoTemplate;
     }
 
-    private Query findByTransactionDateAndAmountQuery(BankAccountStatementDocument statement) {
-        return new Query(
-                Criteria.where("transactionDate").is(statement.getTransactionDate()).and("descriptions")
-                        .is(statement.getDescriptions()).and("type").is(statement.getType())
-                        .and("debit")
-                        .is(statement.getDebit())
-                        .and("credit")
-                        .is(statement.getCredit()));
-    }
 
     public void saveAccountStatementDocuments(List<? extends AccountStatementDocument> accountStatementList,
                                               AccountDocument accountDocument) {
-        log.info("in saveAccountStatementDocuments");
         String documentCollectionName = accountDocument.getAccountStatementCollectionName();
-        accountDocument.getAccountStatementBalance();
-        accountStatementList.forEach(statement -> {
-            Query query = findByTransactionDateAndAmountQuery((BankAccountStatementDocument) statement);
-            Update update = Update.update("duplicate", Boolean.TRUE);
-            UpdateResult updateMultiResult = mongoTemplate.updateMulti(query, update,
-                    AccountStatementDocument.class, documentCollectionName);
-            if (updateMultiResult.getMatchedCount() > 0) {
-                log.warn("Total Duplicate Records found: " + updateMultiResult.getMatchedCount()
-                        + "and total updated records are: "
-                        + updateMultiResult.getModifiedCount());
-                statement.setDuplicate(Boolean.TRUE);
+        log.info("in saveAccountStatementDocuments");
+        switch (accountDocument.getInstitutionCategory()) {
+            case BANKING -> {
+                accountDocument.getAccountStatementBalance();
+                accountStatementList.forEach(statement -> {
+                    Query query = FinanceDataHelper.findByTransactionDateAndAmountQuery((BankAccountStatementDocument) statement);
+                    Update update = Update.update("duplicate", Boolean.TRUE);
+                    UpdateResult updateMultiResult = mongoTemplate.updateMulti(query, update,
+                            AccountStatementDocument.class, documentCollectionName);
+                    if (updateMultiResult.getMatchedCount() > 0) {
+                        log.warn("Total Duplicate Records found: " + updateMultiResult.getMatchedCount()
+                                + "and total updated records are: "
+                                + updateMultiResult.getModifiedCount());
+                        statement.setDuplicate(Boolean.TRUE);
+                    }
+                    mongoTemplate.save(statement, documentCollectionName);
+                });
+                log.info("All statements are recorded");
+                mongoTemplate.updateFirst(FinanceDataHelper.findById(accountDocument.getId()), accountDocument.getBalanceCalculatedFlagQuery(Boolean.FALSE), AccountDocument.class);
+                accountDocument.calculateAccountBalance();
+                calculateAccountAndStatementBalance(accountDocument);
             }
-            mongoTemplate.save(statement, documentCollectionName);
-        });
-        log.info("All statements are recorded");
-        mongoTemplate.updateFirst(FinanceDataHelper.findById(accountDocument.getId()), accountDocument.getBalanceCalculatedFlagQuery(Boolean.FALSE), AccountDocument.class);
-        calculateAccountAndStatementBalance(accountDocument);
+            case INVESTMENT -> {
+                accountStatementList.forEach(statement -> {
+                    mongoTemplate.save(statement, documentCollectionName);
+                });
+                log.info("All statements are recorded");
+            }
+        }
+
         log.info("out saveAccountStatementDocuments");
     }
 
@@ -96,7 +98,7 @@ public class AccountDocumentService {
         log.info("in getAccountStatementDocuments with sort");
         Sort sort = Sort.by(Direction.ASC, "transactionDate").and(Sort.by(Direction.ASC, "type"));
         Query query = new Query();
-        query.with(sort);
+//        query.with(sort);
         // PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, sort);
         List<AccountStatementDocument> accountStatementList = mongoTemplate.find(query,
                 AccountStatementDocument.class,
@@ -114,7 +116,7 @@ public class AccountDocumentService {
         DeleteResult deleteResult = mongoTemplate.remove(FinanceDataHelper.findById(statementId), AccountStatementDocument.class,
                 accountDocument.getAccountStatementCollectionName());
 
-        Query query = findByTransactionDateAndAmountQuery((BankAccountStatementDocument) statementDocument);
+        Query query = FinanceDataHelper.findByTransactionDateAndAmountQuery((BankAccountStatementDocument) statementDocument);
 
         List<AccountStatementDocument> list = mongoTemplate.find(query, AccountStatementDocument.class,
                 accountDocument.getAccountStatementCollectionName());
@@ -150,6 +152,10 @@ public class AccountDocumentService {
         }
         log.info("out calculateAccountAndStatementBalance");
 
+    }
+
+    public void calculateAccountBalance() {
+        log.info("in AccountService calculate balance");
     }
 
     // // TODO:

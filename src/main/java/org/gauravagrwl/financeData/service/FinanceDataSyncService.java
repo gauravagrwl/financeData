@@ -1,8 +1,5 @@
 package org.gauravagrwl.financeData.service;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 import org.gauravagrwl.financeData.helper.AccountTypeEnum;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
@@ -20,8 +17,11 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 @Service
-public class AccountAsyncService {
+public class FinanceDataSyncService {
 
     @Autowired
     MongoTemplate template;
@@ -31,11 +31,12 @@ public class AccountAsyncService {
     ProfileDocumentRepository profileDocumentRepository;
     CashFlowReportDocumentRepository cashFlowTransactionDocumentRepository;
     AccountStatementDocumentRepository accountStatementDocumentRepository;
+    Logger LOGGER = LoggerFactory.getLogger(FinanceDataSyncService.class);
 
-    public AccountAsyncService(MongoTemplate template, AccountDocumentRepository accountDocumentRepository,
-            ProfileDocumentRepository profileDocumentRepository,
-            CashFlowReportDocumentRepository cashFlowTransactionDocumentRepository,
-            AccountStatementDocumentRepository accountStatementDocumentRepository) {
+    public FinanceDataSyncService(MongoTemplate template, AccountDocumentRepository accountDocumentRepository,
+                                  ProfileDocumentRepository profileDocumentRepository,
+                                  CashFlowReportDocumentRepository cashFlowTransactionDocumentRepository,
+                                  AccountStatementDocumentRepository accountStatementDocumentRepository) {
         this.template = template;
         this.accountDocumentRepository = accountDocumentRepository;
         this.profileDocumentRepository = profileDocumentRepository;
@@ -43,11 +44,9 @@ public class AccountAsyncService {
         this.accountStatementDocumentRepository = accountStatementDocumentRepository;
     }
 
-    Logger LOGGER = LoggerFactory.getLogger(AccountAsyncService.class);
-
     @Async
     public void calculateAccountStatementBalance(AccountDocument accountDocument,
-            List<BankAccountStatementDocument> accountStatementDocumentList) {
+                                                 List<BankAccountStatementDocument> accountStatementDocumentList) {
         if (!accountDocument.getIsBalanceCalculated()) {
             LOGGER.info("Processing Account Balance for account: "
                     + FinanceDataHelper.getAccountDisplayNumber(accountDocument.getAccountNumber()));
@@ -74,7 +73,7 @@ public class AccountAsyncService {
 
     @Async
     public void updateCashFlowDocuments(AccountDocument accountDocument,
-            List<BankAccountStatementDocument> bankAccountStatementList) {
+                                        List<BankAccountStatementDocument> bankAccountStatementList) {
         bankAccountStatementList.forEach(statement -> {
             if (!statement.getReconciled()) {
                 buildCashFlowTransaction(statement);

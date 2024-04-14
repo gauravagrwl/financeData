@@ -1,24 +1,28 @@
 package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
 
-import java.math.BigDecimal;
-import java.util.Currency;
-
-import lombok.*;
-import org.gauravagrwl.financeData.helper.AccountTypeEnum;
-import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
-import org.gauravagrwl.financeData.model.audit.AuditMetadata;
-import org.springframework.data.annotation.Version;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.MongoId;
-
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-
+import com.opencsv.bean.MappingStrategy;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.gauravagrwl.financeData.helper.AccountTypeEnum;
+import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
+import org.gauravagrwl.financeData.model.audit.AuditMetadata;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.Currency;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,6 +36,7 @@ import org.springframework.data.mongodb.core.query.Update;
         @JsonSubTypes.Type(value = LoanAccountDocument.class, name = "LoanAccount"),
         @JsonSubTypes.Type(value = AssetsAccountDocument.class, name = "AssetsAccount"),
 })
+@Component
 public abstract class AccountDocument {
 
     @MongoId
@@ -70,12 +75,17 @@ public abstract class AccountDocument {
     @Version
     private Integer version;
 
+    //Needed for data to upload. Name_accounttype
+    private String csvProfile;
+
     // Indicator if respective Account Balance Is Calculated.
     private Boolean isBalanceCalculated = Boolean.FALSE;
 
+    public abstract MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(String mappingProfile);
+
     public abstract Update getUpdateBalanceUpdateQuery(BigDecimal amount);
 
-    public Update getBalanceCalculatedFlagQuery(Boolean flag){
+    public Update getBalanceCalculatedFlagQuery(Boolean flag) {
         return Update.update("isBalanceCalculated", flag);
     }
 

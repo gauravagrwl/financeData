@@ -1,19 +1,19 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountLedger;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Currency;
+package org.gauravagrwl.financeData.model.profileAccount.accountStatement;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Currency;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class InvestmentAccountTransactionLedgerDocument {
+public class InvestmentCryptoAccountStatement extends AccountStatementDocument {
     // Robinhood: Activity Date Process Date Settle Date Instrument Description
     // Trans Code Quantity Price Amount
 

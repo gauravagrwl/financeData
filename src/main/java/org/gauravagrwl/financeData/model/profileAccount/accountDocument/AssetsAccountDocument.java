@@ -1,9 +1,14 @@
 package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
 
-import java.math.BigDecimal;
-
-import lombok.*;
+import com.opencsv.bean.MappingStrategy;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
 import org.springframework.data.mongodb.core.query.Update;
+
+import java.math.BigDecimal;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,6 +34,11 @@ public class AssetsAccountDocument extends AccountDocument {
     @Override
     public BigDecimal getAccountStatementBalance() {
         return getAmountInvestment();
+    }
+
+    @Override
+    public MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(String mappingProfile) {
+        return null;
     }
 
     @Override

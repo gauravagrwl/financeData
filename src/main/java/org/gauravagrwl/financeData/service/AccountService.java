@@ -1,7 +1,8 @@
 package org.gauravagrwl.financeData.service;
 
-import java.util.List;
-
+import jakarta.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.gauravagrwl.financeData.exception.FinanceDataException;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
@@ -13,22 +14,19 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
-import jakarta.validation.constraints.NotNull;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
 
 @Service
 @Slf4j
 public class AccountService {
 
-    private AccountDocumentRepository accountDocumentRepository;
-
-    private ProfileService profileService;
-
     @Autowired
     CashFlowReportDocumentRepository cashFlowTransactionDocumentRepository;
+    private AccountDocumentRepository accountDocumentRepository;
+    private ProfileService profileService;
 
     public AccountService(AccountDocumentRepository accountDocumentRepository, ProfileService profileService,
-            AccountStatementDocumentRepository accountTransactionDocumentRepository) {
+                          AccountStatementDocumentRepository accountTransactionDocumentRepository) {
         this.accountDocumentRepository = accountDocumentRepository;
         this.profileService = profileService;
     }
@@ -37,6 +35,8 @@ public class AccountService {
 
         String profileId = profileService.getUserProfileDocument(userName).getId();
         accountDocument.setProfileDocumentId(profileId);
+        String profileName = StringUtils.join(accountDocument.getInstitutionName(), "_", accountDocument.getAccountType().getAccountTypeName());
+        accountDocument.setCsvProfile(profileName);
         String accountDisplayNumber = FinanceDataHelper.getAccountDisplayNumber(accountDocument.getAccountNumber());
         accountDocument.setAccountStatementCollectionName(
                 FinanceDataHelper.getStatementCollectionName(accountDisplayNumber));
@@ -86,78 +86,5 @@ public class AccountService {
     public void setUpdateCalculateBalance(AccountDocument accountDocument, Boolean bool) {
         accountDocumentRepository.findAndUpdateIsBalanceCalculatedById(accountDocument.getId(), bool);
     }
-
-    // NEED TO CHECK::::
-
-    // public Boolean deleteAccountStatementDocument(AccountDocument
-    // accountDocument, @NonNull String accountStatementId) {
-    // AccountStatementDocument statement =
-    // accountStatementDocumentRepository.findById(accountStatementId).get();
-
-    // if (accountStatementDocumentRepository.existsById(accountStatementId)) {
-    // deleteCashFlowDocument(accountStatementId);
-    // accountStatementDocumentRepository.deleteById(accountStatementId);
-    // log.info("Account Statment deleted for id: " + accountStatementId
-    // + !accountStatementDocumentRepository.existsById(accountStatementId));
-    // }
-    // List<AccountStatementDocument> duplicateStatementList =
-    // findAllByStatementDocument(statement);
-    // if (duplicateStatementList.size() == 1) {
-    // accountStatementDocumentRepository.findAndUpdateDuplicateById(duplicateStatementList.get(0).getId(),
-    // Boolean.FALSE);
-    // }
-    // accountDocument.setIsBalanceCalculated(Boolean.FALSE);
-    // accountDocumentRepository.save(accountDocument);
-    // performAccountProcessing(accountDocument);
-    // return true;
-    // }
-
-    // private boolean deleteCashFlowDocument(@NonNull String accountStatementId) {
-    // if
-    // (cashFlowTransactionDocumentRepository.existsByAccountStatementId(accountStatementId))
-    // {
-    // log.info("CashFlow Transaction deleted for id: " + accountStatementId + "and
-    // Total delete count is: "
-    // +
-    // cashFlowTransactionDocumentRepository.deleteByAccountStatementId(accountStatementId));
-    // return true;
-    // }
-    // return false;
-    // }
-
-    // // @Scheduled(cron = "${updateCashFlowStatement}")
-    // public void performAccountProcessing() {
-    // List<AccountDocument> profileAccountDocuments = new ArrayList<>();
-    // profileService.getAllUserProfileDocument()
-    // .forEach(profile ->
-    // profileAccountDocuments.addAll(getUserAccounts(profile.getUserName())));
-
-    // profileAccountDocuments.forEach(accountDocument ->
-    // performAccountProcessing(accountDocument));
-
-    // }
-
-    // // TODO:
-    // // Add filter for which all account balance can be calculated and be added
-    // // Balance calculation: Bank Account expect credit (primary account)
-    // // to cashflow statement for all cash in and cash out (primary account)
-    // @SuppressWarnings("unchecked")
-    // private void performAccountProcessing(AccountDocument accountDocument) {
-    // if
-    // (InstitutionCategoryEnum.BANKING.compareTo(accountDocument.getInstitutionCategory())
-    // == 0) {
-    // List<BankAccountStatementDocument> bankAccountStatementList =
-    // (List<BankAccountStatementDocument>) getAccountStatementDocuments(
-    // accountDocument);
-    // if (AccountTypeEnum.CREDIT.compareTo(accountDocument.getAccountType()) != 0)
-    // {
-    // accountAsyncService.calculateAccountStatementBalance(accountDocument,
-    // bankAccountStatementList);
-    // }
-
-    // accountAsyncService.updateCashFlowDocuments(accountDocument,
-    // bankAccountStatementList);
-    // }
-    // }
 
 }

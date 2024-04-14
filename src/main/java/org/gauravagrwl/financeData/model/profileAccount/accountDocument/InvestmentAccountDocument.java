@@ -1,16 +1,24 @@
 package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
 
-import java.math.BigDecimal;
-
-import lombok.*;
+import com.opencsv.bean.HeaderColumnNameMappingStrategyBuilder;
+import com.opencsv.bean.MappingStrategy;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentCryptoAccountStatement;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentStockAccountStatement;
 import org.springframework.data.mongodb.core.query.Update;
+
+import java.math.BigDecimal;
 
 /**
  * This class supports below Institution Sub Category:
- * 
+ * <p>
  * STOCK(InstitutionCategoryEnum.INVESTMENT, "STOCK", "201"),
  * CRYPTO(InstitutionCategoryEnum.INVESTMENT, "CRYPTO", "202"),
- *
  */
 
 @AllArgsConstructor
@@ -29,6 +37,23 @@ public class InvestmentAccountDocument extends AccountDocument {
     private Boolean isAutoTradable = Boolean.FALSE;
 
     private String ledgerTransactionCollectionName;
+
+    @Override
+    public MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(String mappingProfile) {
+        if (StringUtils.containsIgnoreCase(mappingProfile, "Stock")) {
+            MappingStrategy<InvestmentStockAccountStatement> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<InvestmentStockAccountStatement>()
+                    .withForceCorrectRecordLength(true).build();
+            headerColumnNameMappingStrategy.setProfile(mappingProfile);
+            headerColumnNameMappingStrategy.setType(InvestmentStockAccountStatement.class);
+            return headerColumnNameMappingStrategy;
+        } else {
+            MappingStrategy<InvestmentCryptoAccountStatement> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<InvestmentCryptoAccountStatement>()
+                    .withForceCorrectRecordLength(true).build();
+            headerColumnNameMappingStrategy.setProfile(mappingProfile);
+            headerColumnNameMappingStrategy.setType(InvestmentCryptoAccountStatement.class);
+            return headerColumnNameMappingStrategy;
+        }
+    }
 
     @Override
     public Update getUpdateBalanceUpdateQuery(BigDecimal amount) {
