@@ -3,6 +3,9 @@ package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
 import java.math.BigDecimal;
 
 import lombok.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Update;
 
 /**
  * This class supports below Institution Sub Category:
@@ -21,6 +24,10 @@ import lombok.*;
 @Getter
 public class BankAccountDocument extends AccountDocument {
 
+    @Autowired
+    MongoTemplate mongoTemplate;
+
+
     // Account Calculated Balance
     private BigDecimal accountBalance = BigDecimal.ZERO;
 
@@ -34,8 +41,18 @@ public class BankAccountDocument extends AccountDocument {
     private String accountCodeType;
 
     @Override
-    public void calculate(BigDecimal amount) {
-        this.accountBalance = amount;
+    public BigDecimal getAccountStatementBalance() {
+        return getAccountBalance();
+    }
+
+    @Override
+    public Update getUpdateBalanceUpdateQuery(BigDecimal amount) {
+        return Update.update("accountBalance", amount);
+    }
+
+    @Override
+    public BigDecimal calculateAccountBalance() {
+        return null;
     }
 
 }

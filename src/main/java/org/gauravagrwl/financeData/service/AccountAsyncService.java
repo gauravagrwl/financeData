@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import org.gauravagrwl.financeData.helper.AccountTypeEnum;
-import org.gauravagrwl.financeData.helper.AppHelper;
+import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
@@ -47,10 +47,10 @@ public class AccountAsyncService {
 
     @Async
     public void calculateAccountStatementBalance(AccountDocument accountDocument,
-                                                 List<BankAccountStatementDocument> accountStatementDocumentList) {
+            List<BankAccountStatementDocument> accountStatementDocumentList) {
         if (!accountDocument.getIsBalanceCalculated()) {
             LOGGER.info("Processing Account Balance for account: "
-                    + AppHelper.prependAccountNumber(accountDocument.getAccountNumber()));
+                    + FinanceDataHelper.getAccountDisplayNumber(accountDocument.getAccountNumber()));
 
             // accountStatementDocumentList.sort(BankAccountStatementDocument.statementSort);
             BigDecimal accountBalance = BigDecimal.ZERO;
@@ -64,7 +64,7 @@ public class AccountAsyncService {
 
                 if (!AccountTypeEnum.CREDIT.equals(accountDocument.getAccountType())
                         && InstitutionCategoryEnum.BANKING.equals(accountDocument.getInstitutionCategory())) {
-                    accountDocument.calculate(accountBalance);
+                    accountDocument.getUpdateBalanceUpdateQuery(accountBalance);
                     accountDocument.setIsBalanceCalculated(Boolean.TRUE);
                     accountDocumentRepository.save(accountDocument);
                 }

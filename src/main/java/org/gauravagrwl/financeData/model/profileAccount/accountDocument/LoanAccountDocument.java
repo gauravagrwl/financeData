@@ -3,6 +3,7 @@ package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
 import java.math.BigDecimal;
 
 import lombok.*;
+import org.springframework.data.mongodb.core.query.Update;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,8 +19,18 @@ public class LoanAccountDocument extends AccountDocument {
 	private String remaingInstallment;
 
 	@Override
-	public void calculate(BigDecimal amount) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'calculate'");
+	public Update getUpdateBalanceUpdateQuery(BigDecimal amount) {
+		return Update.update("loanAmount", amount);
+
+	}
+
+	@Override
+	public BigDecimal getAccountStatementBalance() {
+		return getLoanAmount();
+	}
+
+	@Override
+	public BigDecimal calculateAccountBalance() {
+		return null;
 	}
 }

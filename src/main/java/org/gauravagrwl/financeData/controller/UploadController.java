@@ -7,7 +7,9 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
+import org.gauravagrwl.financeData.service.AccountDocumentService;
 import org.gauravagrwl.financeData.service.AccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,17 +26,20 @@ import com.opencsv.bean.MappingStrategy;
 
 @RestController
 @RequestMapping(value = "/upload")
-public class DataUploadController {
+public class UploadController {
 
-    Logger LOGGER = LoggerFactory.getLogger(DataUploadController.class);
+    Logger LOGGER = LoggerFactory.getLogger(UploadController.class);
+
+    private final AccountDocumentService accountDocumentService;
 
     private final AccountService accountService;
 
-    public DataUploadController(AccountService accountService) {
+    public UploadController(AccountDocumentService accountDocumentService, AccountService accountService) {
+        this.accountDocumentService = accountDocumentService;
         this.accountService = accountService;
     }
 
-    @PostMapping("/uploadStatements")
+    @PostMapping("/uploadDocuments")
     public ResponseEntity<String> uploadAccountStatement(
             @RequestParam(name = "userName", required = true) String userName,
             @RequestParam(name = "accountId", required = true) String accountId,
@@ -69,7 +74,7 @@ public class DataUploadController {
             transDoc.setAccountDocumentId(accountDocument.getId());
         });
 
-        accountService.processAccountStatements(transactionList, accountDocument);
+        accountDocumentService.saveAccountStatementDocuments(transactionList, accountDocument);
 
         return ResponseEntity.ok("Account statement updated for account id : " + accountId);
     }

@@ -2,6 +2,7 @@ package org.gauravagrwl.financeData.model.profileAccount.accountStatement;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Comparator;
 
 import org.gauravagrwl.financeData.helper.CsvAmountStringToBigDecimalConverter;
 import org.gauravagrwl.financeData.helper.CsvMDYDateStringToDateConverter;
@@ -18,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.query.Query;
 
 @Getter
 @Setter
@@ -65,6 +67,13 @@ public class BankAccountStatementDocument extends AccountStatementDocument {
 		return headerColumnNameMappingStrategy;
 	}
 
+	public static Comparator<BankAccountStatementDocument> sortBankStatment = Comparator
+			.comparing(BankAccountStatementDocument::getTransactionDate)
+			.thenComparing(BankAccountStatementDocument::getType);
+
+	// public static Comparator<BankAccountStatementDocument>
+	// sortBankStatmentBySerialNumber = Comparator
+	// .comparingLong(BankAccountStatementDocument::getSno);
 }
 // SAV - debit goes in to the account
 // SAV - Credit goes out of the account

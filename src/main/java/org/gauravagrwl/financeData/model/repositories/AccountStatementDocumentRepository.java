@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -11,6 +12,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.Update;
 
+@Hidden
 public interface AccountStatementDocumentRepository extends MongoRepository<AccountStatementDocument, String> {
 
     List<AccountStatementDocument> findByAccountDocumentId(String accountDocumentId, Pageable pageable);

@@ -17,11 +17,14 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
+import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.mongodb.core.query.Update;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@Document(collection = "account_document")
+@Document(collection = "account_collections")
 @JsonTypeInfo(use = Id.NAME, include = As.EXISTING_PROPERTY, property = "institutionCategory", defaultImpl = InstitutionCategoryEnum.class, visible = true)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = BankAccountDocument.class, name = "BankAccount"),
@@ -35,19 +38,26 @@ public abstract class AccountDocument {
     private String id;
 
     // Financial institute Name
+    @NotBlank(message = "Institution Name is required. Ex: Chase / SBI")
     private String institutionName;
 
     // Financial institute Currency
+    // @NotBlank(message = "Institution Currency is required. Ex: INR / USD")
     private Currency institutionCurrency;
 
     // Financial institute Type can be: BANKING, INVESTMENT, MARKET, LOAN
+    // @NotBlank(message = "Institution Category is required.")
     private InstitutionCategoryEnum institutionCategory;
 
     // Financial institute Account Number must be unique
+    @NotBlank(message = "Account Number is required.")
     @Indexed(unique = true, background = true)
     private String accountNumber;
 
+    // @NotBlank(message = "Account Type is required.")
     private AccountTypeEnum accountType;
+
+    private String accountStatementCollectionName;
 
     // User profile who holds the account
     private String profileDocumentId;
@@ -63,6 +73,14 @@ public abstract class AccountDocument {
     // Indicator if respective Account Balance Is Calculated.
     private Boolean isBalanceCalculated = Boolean.FALSE;
 
-    public abstract void calculate(BigDecimal amount);
+    public abstract Update getUpdateBalanceUpdateQuery(BigDecimal amount);
+
+    public Update getBalanceCalculatedFlagQuery(Boolean flag){
+        return Update.update("isBalanceCalculated", flag);
+    }
+
+    public abstract BigDecimal getAccountStatementBalance();
+
+    public abstract BigDecimal calculateAccountBalance();
 
 }

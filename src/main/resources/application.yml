@@ -11,6 +11,10 @@ spring:
   data:
     mongodb:
       auto-index-creation: true
+      uri: mongodb://localhost:27017
+      database: testdb
+  autoconfigure:
+    exclude: 'org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration'
 
   application:
     name: Finance Data Api
@@ -18,5 +22,11 @@ spring:
 server:
   servlet:
     context-path: /financeData
+  port: 8084
 
+
+
+
+# updateBalance: "10 * * * * *"
+# updateCashFlowStatement: "10 * * * * *"
 
