@@ -13,8 +13,10 @@ import org.gauravagrwl.financeData.model.profileAccount.accountStatement.Investm
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentStockAccountStatement;
 import org.gauravagrwl.financeData.service.AccountDocumentService;
 import org.gauravagrwl.financeData.service.AccountService;
+import org.gauravagrwl.financeData.service.FinanceDataSyncService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,6 +36,10 @@ public class UploadController {
     private final AccountDocumentService accountDocumentService;
     private final AccountService accountService;
     Logger LOGGER = LoggerFactory.getLogger(UploadController.class);
+
+    @Autowired
+    FinanceDataSyncService financeDataSyncService;
+
 
     public UploadController(AccountDocumentService accountDocumentService, AccountService accountService) {
         this.accountDocumentService = accountDocumentService;
@@ -64,7 +70,7 @@ public class UploadController {
         }
 
         accountDocumentService.saveAccountStatementDocuments(statementDocumentList, accountDocument);
-
+        financeDataSyncService.calculateAccountBalance(accountDocument);
         return ResponseEntity.ok("Account statement updated for account id : " + accountId);
     }
 

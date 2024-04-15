@@ -18,11 +18,13 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.Currency;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -79,7 +81,7 @@ public abstract class AccountDocument {
     private String csvProfile;
 
     // Indicator if respective Account Balance Is Calculated.
-    private Boolean isBalanceCalculated = Boolean.FALSE;
+    private Boolean balanceCalculatedFlag = Boolean.FALSE;
 
     public abstract MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(String mappingProfile);
 
@@ -89,8 +91,10 @@ public abstract class AccountDocument {
         return Update.update("isBalanceCalculated", flag);
     }
 
+    public abstract Query findDuplicateRecordQuery(AccountStatementDocument statementDocument);
+
     public abstract BigDecimal getAccountStatementBalance();
 
-    public abstract BigDecimal calculateAccountBalance();
+    public abstract List<? extends AccountStatementDocument> calculateAccountBalance(List<? extends AccountStatementDocument> statementDocumentList);
 
 }

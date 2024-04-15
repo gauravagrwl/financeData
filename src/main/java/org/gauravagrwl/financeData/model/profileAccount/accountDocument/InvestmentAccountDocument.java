@@ -10,9 +10,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentCryptoAccountStatement;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentStockAccountStatement;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * This class supports below Institution Sub Category:
@@ -61,12 +63,17 @@ public class InvestmentAccountDocument extends AccountDocument {
     }
 
     @Override
+    public Query findDuplicateRecordQuery(AccountStatementDocument statementDocument) {
+        return null;
+    }
+
+    @Override
     public BigDecimal getAccountStatementBalance() {
         return getAmountInvestment();
     }
 
     @Override
-    public BigDecimal calculateAccountBalance() {
+    public List<? extends AccountStatementDocument> calculateAccountBalance(List<? extends AccountStatementDocument> statementDocumentList) {
         return null;
     }
 

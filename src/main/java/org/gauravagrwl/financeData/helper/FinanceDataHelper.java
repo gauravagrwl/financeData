@@ -1,7 +1,6 @@
 package org.gauravagrwl.financeData.helper;
 
 import org.apache.commons.lang3.StringUtils;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
@@ -27,14 +26,4 @@ public class FinanceDataHelper {
         return query;
     }
 
-
-    public static Query findByTransactionDateAndAmountQuery(BankAccountStatementDocument statement) {
-        return new Query(
-                Criteria.where("transactionDate").is(statement.getTransactionDate()).and("descriptions")
-                        .is(statement.getDescriptions()).and("type").is(statement.getType())
-                        .and("debit")
-                        .is(statement.getDebit())
-                        .and("credit")
-                        .is(statement.getCredit()));
-    }
 }

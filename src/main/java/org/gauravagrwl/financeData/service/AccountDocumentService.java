@@ -4,13 +4,10 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
-import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
-import org.gauravagrwl.financeData.model.repositories.AccountStatementDocumentRepository;
+import org.gauravagrwl.financeData.model.repositories.AccountDocumentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -26,8 +23,10 @@ import java.util.List;
 public class AccountDocumentService {
 
     private final MongoTemplate mongoTemplate;
+
     @Autowired
-    private AccountStatementDocumentRepository accountStatementDocumentRepository;
+    AccountDocumentRepository accountDocumentRepository;
+    Update updateDuplicateIndicatorDefination = Update.update("duplicate", Boolean.TRUE);
 
     public AccountDocumentService(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
@@ -42,9 +41,8 @@ public class AccountDocumentService {
             case BANKING -> {
                 accountDocument.getAccountStatementBalance();
                 accountStatementList.forEach(statement -> {
-                    Query query = FinanceDataHelper.findByTransactionDateAndAmountQuery((BankAccountStatementDocument) statement);
-                    Update update = Update.update("duplicate", Boolean.TRUE);
-                    UpdateResult updateMultiResult = mongoTemplate.updateMulti(query, update,
+                    Query query = accountDocument.findDuplicateRecordQuery(statement);
+                    UpdateResult updateMultiResult = mongoTemplate.updateMulti(query, updateDuplicateIndicatorDefination,
                             AccountStatementDocument.class, documentCollectionName);
                     if (updateMultiResult.getMatchedCount() > 0) {
                         log.warn("Total Duplicate Records found: " + updateMultiResult.getMatchedCount()
@@ -55,18 +53,15 @@ public class AccountDocumentService {
                     mongoTemplate.save(statement, documentCollectionName);
                 });
                 log.info("All statements are recorded");
-                mongoTemplate.updateFirst(FinanceDataHelper.findById(accountDocument.getId()), accountDocument.getBalanceCalculatedFlagQuery(Boolean.FALSE), AccountDocument.class);
-                accountDocument.calculateAccountBalance();
-                calculateAccountAndStatementBalance(accountDocument);
             }
-            case INVESTMENT -> {
+            case LOAN, INVESTMENT, ASSETS -> {
                 accountStatementList.forEach(statement -> {
                     mongoTemplate.save(statement, documentCollectionName);
                 });
                 log.info("All statements are recorded");
             }
         }
-
+        accountDocumentRepository.findAndUpdateBalanceCalculateFlagdById(accountDocument.getId(), Boolean.FALSE);
         log.info("out saveAccountStatementDocuments");
     }
 
@@ -76,16 +71,16 @@ public class AccountDocumentService {
      * @param pageSize
      * @return
      */
-    public List<? extends AccountStatementDocument> getAccountStatementDocuments(
-            AccountDocument accountDocument, Integer pageNumber, Integer pageSize) {
-        log.info("in getAccountStatementDocuments with page number");
-        Sort sort = Sort.by(Direction.ASC, "transactionDate").and(Sort.by(Direction.ASC, "type"));
-        PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, sort);
-        List<AccountStatementDocument> accountStatementList = accountStatementDocumentRepository
-                .findByAccountDocumentId(accountDocument.getId(), pageRequest);
-        log.info("out getAccountStatementDocuments with page number");
-        return accountStatementList;
-    }
+//    public List<? extends AccountStatementDocument> getAccountStatementDocuments(
+//            AccountDocument accountDocument, Integer pageNumber, Integer pageSize) {
+//        log.info("in getAccountStatementDocuments with page number");
+//        Sort sort = Sort.by(Direction.ASC, "transactionDate").and(Sort.by(Direction.ASC, "type"));
+//        PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, sort);
+//        List<AccountStatementDocument> accountStatementList = accountStatementDocumentRepository
+//                .findByAccountDocumentId(accountDocument.getId(), pageRequest);
+//        log.info("out getAccountStatementDocuments with page number");
+//        return accountStatementList;
+//    }
 
     /**
      * With sorted only.
@@ -116,8 +111,7 @@ public class AccountDocumentService {
         DeleteResult deleteResult = mongoTemplate.remove(FinanceDataHelper.findById(statementId), AccountStatementDocument.class,
                 accountDocument.getAccountStatementCollectionName());
 
-        Query query = FinanceDataHelper.findByTransactionDateAndAmountQuery((BankAccountStatementDocument) statementDocument);
-
+        Query query = accountDocument.findDuplicateRecordQuery(statementDocument);
         List<AccountStatementDocument> list = mongoTemplate.find(query, AccountStatementDocument.class,
                 accountDocument.getAccountStatementCollectionName());
 
@@ -127,57 +121,17 @@ public class AccountDocumentService {
                     AccountStatementDocument.class,
                     accountDocument.getAccountStatementCollectionName());
         }
-        calculateAccountAndStatementBalance(accountDocument);
+        accountDocumentRepository.findAndUpdateBalanceCalculateFlagdById(accountDocument.getId(), Boolean.FALSE);
         log.info("out deleteAccountStatementDocument");
     }
 
-    @SuppressWarnings("unchecked")
-    private void calculateAccountAndStatementBalance(AccountDocument accountDocument) {
-        log.info("in calculateAccountAndStatementBalance");
-        if (InstitutionCategoryEnum.BANKING.compareTo(accountDocument.getInstitutionCategory()) == 0) {
-            BigDecimal accountBalance = BigDecimal.ZERO;
-            List<BankAccountStatementDocument> statementList = (List<BankAccountStatementDocument>) getAccountStatementDocuments(
-                    accountDocument);
-            for (BankAccountStatementDocument statement : statementList) {
-                accountBalance = accountBalance.add(statement.getCredit())
-                        .subtract(statement.getDebit());
-                statement.setBalance(accountBalance);
-                Update statementUpdateDefination = Update.update("balance", accountBalance);
-                mongoTemplate.updateFirst(FinanceDataHelper.findById(statement.getId()), statementUpdateDefination,
-                        AccountStatementDocument.class,
-                        accountDocument.getAccountStatementCollectionName());
-            }
-            mongoTemplate.updateFirst(FinanceDataHelper.findById(accountDocument.getId()), accountDocument.getUpdateBalanceUpdateQuery(accountBalance), AccountDocument.class);
-            mongoTemplate.updateFirst(FinanceDataHelper.findById(accountDocument.getId()), accountDocument.getBalanceCalculatedFlagQuery(Boolean.TRUE), AccountDocument.class);
-        }
-        log.info("out calculateAccountAndStatementBalance");
+    public void updateAccountBalanceById(AccountDocument accountDocument, BigDecimal balance) {
+        accountDocumentRepository.findAndUpdateAccountBalanceById(accountDocument.getId(), balance);
 
     }
 
-    public void calculateAccountBalance() {
-        log.info("in AccountService calculate balance");
+    public void updateBalanceCalculatedFlag(AccountDocument accountDocument, Boolean flag) {
+        accountDocumentRepository.findAndUpdateBalanceCalculateFlagdById(accountDocument.getId(), flag);
+
     }
-
-    // // TODO:
-    // // Add filter for which all account balance can be calculated and be added
-    // // Balance calculation: Bank Account expect credit (primary account)
-    // // to cashflow statement for all cash in and cash out (primary account)
-    // @SuppressWarnings("unchecked")
-    // private void performAccountProcessing(AccountDocument accountDocument) {
-    // if
-    // (InstitutionCategoryEnum.BANKING.compareTo(accountDocument.getInstitutionCategory())
-    // == 0) {
-    // List<BankAccountStatementDocument> bankAccountStatementList =
-    // (List<BankAccountStatementDocument>) getAccountStatementDocuments(
-    // accountDocument);
-    // if (AccountTypeEnum.CREDIT.compareTo(accountDocument.getAccountType()) != 0)
-    // {
-    // accountAsyncService.calculateAccountStatementBalance(accountDocument,
-    // bankAccountStatementList);
-    // }
-
-    // accountAsyncService.updateCashFlowDocuments(accountDocument,
-    // bankAccountStatementList);
-    // }
-    // }
 }

@@ -6,9 +6,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -35,12 +37,17 @@ public class LoanAccountDocument extends AccountDocument {
     }
 
     @Override
+    public Query findDuplicateRecordQuery(AccountStatementDocument statementDocument) {
+        return null;
+    }
+
+    @Override
     public BigDecimal getAccountStatementBalance() {
         return getLoanAmount();
     }
 
     @Override
-    public BigDecimal calculateAccountBalance() {
+    public List<? extends AccountStatementDocument> calculateAccountBalance(List<? extends AccountStatementDocument> statementDocumentList) {
         return null;
     }
 }

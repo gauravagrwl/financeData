@@ -1,117 +1,96 @@
 package org.gauravagrwl.financeData.service;
 
-import org.gauravagrwl.financeData.helper.AccountTypeEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
-import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
-import org.gauravagrwl.financeData.model.reports.CashFlowReportDocument;
-import org.gauravagrwl.financeData.model.repositories.AccountDocumentRepository;
-import org.gauravagrwl.financeData.model.repositories.AccountStatementDocumentRepository;
-import org.gauravagrwl.financeData.model.repositories.CashFlowReportDocumentRepository;
-import org.gauravagrwl.financeData.model.repositories.ProfileDocumentRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Service
+@Slf4j
 public class FinanceDataSyncService {
 
     @Autowired
     MongoTemplate template;
 
-    AccountDocumentRepository accountDocumentRepository;
+    @Autowired
+    ProfileService profileService;
 
-    ProfileDocumentRepository profileDocumentRepository;
-    CashFlowReportDocumentRepository cashFlowTransactionDocumentRepository;
-    AccountStatementDocumentRepository accountStatementDocumentRepository;
-    Logger LOGGER = LoggerFactory.getLogger(FinanceDataSyncService.class);
+    @Autowired
+    AccountDocumentService accountDocumentService;
 
-    public FinanceDataSyncService(MongoTemplate template, AccountDocumentRepository accountDocumentRepository,
-                                  ProfileDocumentRepository profileDocumentRepository,
-                                  CashFlowReportDocumentRepository cashFlowTransactionDocumentRepository,
-                                  AccountStatementDocumentRepository accountStatementDocumentRepository) {
-        this.template = template;
-        this.accountDocumentRepository = accountDocumentRepository;
-        this.profileDocumentRepository = profileDocumentRepository;
-        this.cashFlowTransactionDocumentRepository = cashFlowTransactionDocumentRepository;
-        this.accountStatementDocumentRepository = accountStatementDocumentRepository;
-    }
+    public void calculateAllAccountBalance() {
 
-    @Async
-    public void calculateAccountStatementBalance(AccountDocument accountDocument,
-                                                 List<BankAccountStatementDocument> accountStatementDocumentList) {
-        if (!accountDocument.getIsBalanceCalculated()) {
-            LOGGER.info("Processing Account Balance for account: "
-                    + FinanceDataHelper.getAccountDisplayNumber(accountDocument.getAccountNumber()));
-
-            // accountStatementDocumentList.sort(BankAccountStatementDocument.statementSort);
-            BigDecimal accountBalance = BigDecimal.ZERO;
-
-            for (BankAccountStatementDocument statementDocument : accountStatementDocumentList) {
-                accountBalance = accountBalance.add(statementDocument.getCredit())
-                        .subtract(statementDocument.getDebit());
-                statementDocument.setBalance(accountBalance);
-                accountStatementDocumentRepository.findAndUpdateStaementBalanceById(statementDocument.getId(),
-                        accountBalance);
-
-                if (!AccountTypeEnum.CREDIT.equals(accountDocument.getAccountType())
-                        && InstitutionCategoryEnum.BANKING.equals(accountDocument.getInstitutionCategory())) {
-                    accountDocument.getUpdateBalanceUpdateQuery(accountBalance);
-                    accountDocument.setIsBalanceCalculated(Boolean.TRUE);
-                    accountDocumentRepository.save(accountDocument);
-                }
-            }
-        }
-    }
-
-    @Async
-    public void updateCashFlowDocuments(AccountDocument accountDocument,
-                                        List<BankAccountStatementDocument> bankAccountStatementList) {
-        bankAccountStatementList.forEach(statement -> {
-            if (!statement.getReconciled()) {
-                buildCashFlowTransaction(statement);
+        profileService.getAllUserProfileDocument().forEach(userProfileDocument -> {
+            for (AccountDocument userAccount : userProfileDocument.getUserAccounts()) {
+                calculateAccountBalance(userAccount);
             }
         });
-
     }
 
-    private void buildCashFlowTransaction(BankAccountStatementDocument accountStatement) {
-        CashFlowReportDocument cashFlowTransactionDocument = new CashFlowReportDocument();
-
-        cashFlowTransactionDocument.setTransactionDate(accountStatement.getTransactionDate());
-        cashFlowTransactionDocument.setYear(accountStatement.getTransactionDate().getYear());
-        cashFlowTransactionDocument.setDescription(accountStatement.getDescriptions());
-        cashFlowTransactionDocument.setCashIn(accountStatement.getCredit());
-        cashFlowTransactionDocument.setCashOut(accountStatement.getDebit());
-        cashFlowTransactionDocument.setAccountStatementId(accountStatement.getId());
-        if (cashFlowTransactionDocument.getCashIn().compareTo(BigDecimal.ZERO) > 0) {
-            cashFlowTransactionDocument.setTransactionType("CashIn");
+    public void calculateAccountBalance(AccountDocument userAccount) {
+        if (userAccount.getBalanceCalculatedFlag()) {
+            log.info("Calculating account balance for account: " + userAccount.getAccountNumber());
+            List<BankAccountStatementDocument> updatedAccountStatement = (List<BankAccountStatementDocument>) userAccount.calculateAccountBalance(accountDocumentService.getAccountStatementDocuments(userAccount));
+            for (BankAccountStatementDocument accountStatementDocument : updatedAccountStatement) {
+                Update updateDefination = Update.update("balance", accountStatementDocument.getBalance());
+                template.updateFirst(FinanceDataHelper.findById(accountStatementDocument.getId()), updateDefination, userAccount.getAccountStatementCollectionName());
+            }
+            accountDocumentService.updateAccountBalanceById(userAccount, userAccount.getAccountStatementBalance());
+            accountDocumentService.updateBalanceCalculatedFlag(userAccount, Boolean.TRUE);
         } else {
-            cashFlowTransactionDocument.setTransactionType("CashOut");
+            log.info("Balance is not calculated as flag is false for account: " + userAccount.getAccountNumber());
         }
-        cashFlowTransactionDocumentRepository.save(cashFlowTransactionDocument);
-        // accountStatement.setReconciled(Boolean.TRUE);
-        accountStatementDocumentRepository.findAndUpdateReconcileById(accountStatement.getId(),
-                Boolean.TRUE);
 
-        // Query query = new Query(Criteria.where("id").is(accountStatement.getId()));
-        // Update update = Update.update("reconciled", Boolean.TRUE);
-        // template.updateFirst(query, update, BankAccountStatementDocument.class);
-        // AccountStatementDocument accountStatementDocument =
-        // accountStatementDocumentRepository
-        // .findById(accountStatement.getId()).get();
-        // accountStatementDocument.setReconciled(Boolean.TRUE);
-        // accountStatementDocumentRepository.save(accountStatementDocument);
-
-        // accountStatementDocumentRepository.save(accountStatement);
-        // return cashFlowTransactionDocument;
 
     }
+
+
+//    public void updateCashFlowDocuments(AccountDocument accountDocument,
+//                                        List<BankAccountStatementDocument> bankAccountStatementList) {
+//        bankAccountStatementList.forEach(statement -> {
+//            if (!statement.getReconciled()) {
+//                buildCashFlowTransaction(statement);
+//            }
+//        });
+//
+//    }
+
+//    private void buildCashFlowTransaction(BankAccountStatementDocument accountStatement) {
+//        CashFlowReportDocument cashFlowTransactionDocument = new CashFlowReportDocument();
+//
+//        cashFlowTransactionDocument.setTransactionDate(accountStatement.getTransactionDate());
+//        cashFlowTransactionDocument.setYear(accountStatement.getTransactionDate().getYear());
+//        cashFlowTransactionDocument.setDescription(accountStatement.getDescriptions());
+//        cashFlowTransactionDocument.setCashIn(accountStatement.getCredit());
+//        cashFlowTransactionDocument.setCashOut(accountStatement.getDebit());
+//        cashFlowTransactionDocument.setAccountStatementId(accountStatement.getId());
+//        if (cashFlowTransactionDocument.getCashIn().compareTo(BigDecimal.ZERO) > 0) {
+//            cashFlowTransactionDocument.setTransactionType("CashIn");
+//        } else {
+//            cashFlowTransactionDocument.setTransactionType("CashOut");
+//        }
+//        cashFlowTransactionDocumentRepository.save(cashFlowTransactionDocument);
+//        // accountStatement.setReconciled(Boolean.TRUE);
+//        accountStatementDocumentRepository.findAndUpdateReconcileById(accountStatement.getId(),
+//                Boolean.TRUE);
+
+    // Query query = new Query(Criteria.where("id").is(accountStatement.getId()));
+    // Update update = Update.update("reconciled", Boolean.TRUE);
+    // template.updateFirst(query, update, BankAccountStatementDocument.class);
+    // AccountStatementDocument accountStatementDocument =
+    // accountStatementDocumentRepository
+    // .findById(accountStatement.getId()).get();
+    // accountStatementDocument.setReconciled(Boolean.TRUE);
+    // accountStatementDocumentRepository.save(accountStatementDocument);
+
+    // accountStatementDocumentRepository.save(accountStatement);
+    // return cashFlowTransactionDocument;
+
+//    }
 }

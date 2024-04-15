@@ -1,13 +1,13 @@
 package org.gauravagrwl.financeData.model.repositories;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 import io.swagger.v3.oas.annotations.Hidden;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Update;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 @Hidden
 public interface AccountDocumentRepository extends MongoRepository<AccountDocument, String> {
@@ -19,7 +19,7 @@ public interface AccountDocumentRepository extends MongoRepository<AccountDocume
     @Update("{ '$set' : { 'accountBalance' : ?#{[1]} } }")
     void findAndUpdateAccountBalanceById(String id, BigDecimal value);
 
-    @Update("{ '$set' : { 'isBalanceCalculated' : ?#{[1]} } }")
-    void findAndUpdateIsBalanceCalculatedById(String id, Boolean bool);
+    @Update("{ '$set' : { 'balanceCalculatedFlag' : ?#{[1]} } }")
+    void findAndUpdateBalanceCalculateFlagdById(String id, Boolean bool);
 
 }
