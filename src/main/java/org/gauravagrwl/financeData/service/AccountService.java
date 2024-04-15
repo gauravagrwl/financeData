@@ -8,20 +8,17 @@ import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.gauravagrwl.financeData.model.repositories.AccountDocumentRepository;
 import org.gauravagrwl.financeData.model.repositories.AccountStatementDocumentRepository;
-import org.gauravagrwl.financeData.model.repositories.CashFlowReportDocumentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
 @Slf4j
 public class AccountService {
 
-    @Autowired
-    CashFlowReportDocumentRepository cashFlowTransactionDocumentRepository;
     private AccountDocumentRepository accountDocumentRepository;
     private ProfileService profileService;
 
@@ -83,8 +80,14 @@ public class AccountService {
         }
     }
 
-    public void setUpdateCalculateBalance(AccountDocument accountDocument, Boolean bool) {
-        accountDocumentRepository.findAndUpdateIsBalanceCalculatedById(accountDocument.getId(), bool);
+    public void setUpdateCalculateBalanceFlag(AccountDocument accountDocument) {
+        accountDocumentRepository.findAndUpdateBalanceCalculateFlagdById(accountDocument.getId(), accountDocument.getBalanceCalculatedFlag());
+        
+    }
+
+    public void setUpdateAccountBalanceById(AccountDocument accountDocument, BigDecimal balance) {
+        accountDocumentRepository.findAndUpdateAccountBalanceById(accountDocument.getId(), balance);
+
     }
 
 }

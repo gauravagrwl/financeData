@@ -3,8 +3,8 @@ package org.gauravagrwl.financeData.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
-import org.gauravagrwl.financeData.service.AccountDocumentService;
 import org.gauravagrwl.financeData.service.AccountService;
+import org.gauravagrwl.financeData.service.AccountStatementDocumentService;
 import org.gauravagrwl.financeData.service.FinanceDataSyncService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -19,7 +19,7 @@ import java.util.List;
 public class AccountDocumentController {
 
     @Autowired
-    AccountDocumentService accountDocumentService;
+    AccountStatementDocumentService accountDocumentService;
 
     @Autowired
     FinanceDataSyncService financeDataSyncService;

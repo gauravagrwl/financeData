@@ -95,6 +95,15 @@ public abstract class AccountDocument {
 
     public abstract BigDecimal getAccountStatementBalance();
 
+    /**
+     * Set @param balanceCalculatedFlag which is required to calculate the account statement balance.
+     * True: Not needed. (Balance is calculated.)
+     * False: Needed (Balance is calculated.)
+     *
+     * @param flag
+     */
+    public abstract void balanceCalculationNeeded();
+
     public abstract List<? extends AccountStatementDocument> calculateAccountBalance(List<? extends AccountStatementDocument> statementDocumentList);
 
 }

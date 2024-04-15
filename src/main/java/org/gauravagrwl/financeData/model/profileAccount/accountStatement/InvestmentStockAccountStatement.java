@@ -60,4 +60,8 @@ public class InvestmentStockAccountStatement extends AccountStatementDocument {
     private BigDecimal fee;
 
 
+    @Override
+    public BigDecimal getCalculatedStatementBalance() {
+        return null;
+    }
 }

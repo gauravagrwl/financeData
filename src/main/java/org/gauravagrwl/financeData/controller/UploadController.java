@@ -11,8 +11,8 @@ import org.gauravagrwl.financeData.model.profileAccount.accountStatement.Account
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentCryptoAccountStatement;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentStockAccountStatement;
-import org.gauravagrwl.financeData.service.AccountDocumentService;
 import org.gauravagrwl.financeData.service.AccountService;
+import org.gauravagrwl.financeData.service.AccountStatementDocumentService;
 import org.gauravagrwl.financeData.service.FinanceDataSyncService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ import java.util.List;
 @RequestMapping(value = "/upload")
 public class UploadController {
 
-    private final AccountDocumentService accountDocumentService;
+    private final AccountStatementDocumentService accountDocumentService;
     private final AccountService accountService;
     Logger LOGGER = LoggerFactory.getLogger(UploadController.class);
 
@@ -41,7 +41,7 @@ public class UploadController {
     FinanceDataSyncService financeDataSyncService;
 
 
-    public UploadController(AccountDocumentService accountDocumentService, AccountService accountService) {
+    public UploadController(AccountStatementDocumentService accountDocumentService, AccountService accountService) {
         this.accountDocumentService = accountDocumentService;
         this.accountService = accountService;
     }

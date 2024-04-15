@@ -47,6 +47,11 @@ public class LoanAccountDocument extends AccountDocument {
     }
 
     @Override
+    public void balanceCalculationNeeded() {
+        this.setBalanceCalculatedFlag(Boolean.FALSE);
+    }
+
+    @Override
     public List<? extends AccountStatementDocument> calculateAccountBalance(List<? extends AccountStatementDocument> statementDocumentList) {
         return null;
     }

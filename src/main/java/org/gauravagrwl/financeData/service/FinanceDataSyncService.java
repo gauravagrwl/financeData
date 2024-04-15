@@ -3,7 +3,7 @@ package org.gauravagrwl.financeData.service;
 import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
+import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
@@ -22,7 +22,10 @@ public class FinanceDataSyncService {
     ProfileService profileService;
 
     @Autowired
-    AccountDocumentService accountDocumentService;
+    AccountService accountService;
+
+    @Autowired
+    AccountStatementDocumentService accountStatementDocumentService;
 
     public void calculateAllAccountBalance() {
 
@@ -34,15 +37,17 @@ public class FinanceDataSyncService {
     }
 
     public void calculateAccountBalance(AccountDocument userAccount) {
-        if (userAccount.getBalanceCalculatedFlag()) {
+        if (!userAccount.getBalanceCalculatedFlag()) {
             log.info("Calculating account balance for account: " + userAccount.getAccountNumber());
-            List<BankAccountStatementDocument> updatedAccountStatement = (List<BankAccountStatementDocument>) userAccount.calculateAccountBalance(accountDocumentService.getAccountStatementDocuments(userAccount));
-            for (BankAccountStatementDocument accountStatementDocument : updatedAccountStatement) {
-                Update updateDefination = Update.update("balance", accountStatementDocument.getBalance());
-                template.updateFirst(FinanceDataHelper.findById(accountStatementDocument.getId()), updateDefination, userAccount.getAccountStatementCollectionName());
+            List<? extends AccountStatementDocument> updatedAccountStatement = userAccount.calculateAccountBalance(accountStatementDocumentService.getAccountStatementDocuments(userAccount));
+            for (AccountStatementDocument accountStatementDocument : updatedAccountStatement) {
+                Update updateDefination = Update.update("balance", accountStatementDocument.getCalculatedStatementBalance());
+                template.updateFirst(FinanceDataHelper.findById(accountStatementDocument.getId()),
+                        updateDefination, AccountStatementDocument.class, userAccount.getAccountStatementCollectionName());
             }
-            accountDocumentService.updateAccountBalanceById(userAccount, userAccount.getAccountStatementBalance());
-            accountDocumentService.updateBalanceCalculatedFlag(userAccount, Boolean.TRUE);
+            accountService.setUpdateAccountBalanceById(userAccount, userAccount.getAccountStatementBalance());
+            userAccount.setBalanceCalculatedFlag(Boolean.TRUE);
+            accountService.setUpdateCalculateBalanceFlag(userAccount);
         } else {
             log.info("Balance is not calculated as flag is false for account: " + userAccount.getAccountNumber());
         }

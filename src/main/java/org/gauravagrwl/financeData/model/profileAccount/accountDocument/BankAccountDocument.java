@@ -61,6 +61,11 @@ public class BankAccountDocument extends AccountDocument {
     }
 
     @Override
+    public void balanceCalculationNeeded() {
+        this.setBalanceCalculatedFlag(Boolean.FALSE);
+    }
+
+    @Override
     public Update getUpdateBalanceUpdateQuery(BigDecimal amount) {
         return Update.update("accountBalance", amount);
     }

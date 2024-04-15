@@ -6,12 +6,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 @Hidden
 public interface CashFlowReportDocumentRepository
-                extends MongoRepository<CashFlowReportDocument, String> {
+        extends MongoRepository<CashFlowReportDocument, String> {
 
-        CashFlowReportDocument findByAccountStatementId(String accountStatementId);
-
-        Boolean existsByAccountStatementId(String accountStatementId);
-
-        Long deleteByAccountStatementId(String accountStatementId);
 
 }

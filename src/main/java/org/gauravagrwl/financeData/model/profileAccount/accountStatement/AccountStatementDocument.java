@@ -1,18 +1,15 @@
 package org.gauravagrwl.financeData.model.profileAccount.accountStatement;
 
-import org.gauravagrwl.financeData.model.audit.AuditMetadata;
-import org.springframework.data.annotation.Version;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.MongoId;
-
-import com.opencsv.bean.MappingStrategy;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.mongodb.core.query.Query;
+import org.gauravagrwl.financeData.model.audit.AuditMetadata;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.MongoId;
+
+import java.math.BigDecimal;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,19 +17,21 @@ import org.springframework.data.mongodb.core.query.Query;
 @Setter
 public abstract class AccountStatementDocument {
 
-        @MongoId
-        private String id;
+    @MongoId
+    private String id;
 
-        private String accountDocumentId;
+    private String accountDocumentId;
 
-        @Indexed
-        private Boolean reconciled = Boolean.FALSE;
+    @Indexed
+    private Boolean reconciled = Boolean.FALSE;
 
-        private Boolean duplicate = Boolean.FALSE;
+    private Boolean duplicate = Boolean.FALSE;
 
-        private AuditMetadata audit = new AuditMetadata();
+    private AuditMetadata audit = new AuditMetadata();
 
-        @Version
-        private Integer version;
+    @Version
+    private Integer version;
+
+    public abstract BigDecimal getCalculatedStatementBalance();
 
 }

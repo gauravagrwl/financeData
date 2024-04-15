@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
-import org.gauravagrwl.financeData.model.repositories.AccountDocumentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -15,20 +14,19 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Service
 @Slf4j
-public class AccountDocumentService {
+public class AccountStatementDocumentService {
 
     private final MongoTemplate mongoTemplate;
 
     @Autowired
-    AccountDocumentRepository accountDocumentRepository;
+    AccountService accountService;
     Update updateDuplicateIndicatorDefination = Update.update("duplicate", Boolean.TRUE);
 
-    public AccountDocumentService(MongoTemplate mongoTemplate) {
+    public AccountStatementDocumentService(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
 
@@ -58,10 +56,12 @@ public class AccountDocumentService {
                 accountStatementList.forEach(statement -> {
                     mongoTemplate.save(statement, documentCollectionName);
                 });
+
                 log.info("All statements are recorded");
             }
         }
-        accountDocumentRepository.findAndUpdateBalanceCalculateFlagdById(accountDocument.getId(), Boolean.FALSE);
+        accountDocument.balanceCalculationNeeded();
+        accountService.setUpdateCalculateBalanceFlag(accountDocument);
         log.info("out saveAccountStatementDocuments");
     }
 
@@ -93,7 +93,7 @@ public class AccountDocumentService {
         log.info("in getAccountStatementDocuments with sort");
         Sort sort = Sort.by(Direction.ASC, "transactionDate").and(Sort.by(Direction.ASC, "type"));
         Query query = new Query();
-//        query.with(sort);
+        query.with(sort);
         // PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, sort);
         List<AccountStatementDocument> accountStatementList = mongoTemplate.find(query,
                 AccountStatementDocument.class,
@@ -121,17 +121,9 @@ public class AccountDocumentService {
                     AccountStatementDocument.class,
                     accountDocument.getAccountStatementCollectionName());
         }
-        accountDocumentRepository.findAndUpdateBalanceCalculateFlagdById(accountDocument.getId(), Boolean.FALSE);
+        accountDocument.balanceCalculationNeeded();
+        accountService.setUpdateCalculateBalanceFlag(accountDocument);
         log.info("out deleteAccountStatementDocument");
     }
 
-    public void updateAccountBalanceById(AccountDocument accountDocument, BigDecimal balance) {
-        accountDocumentRepository.findAndUpdateAccountBalanceById(accountDocument.getId(), balance);
-
-    }
-
-    public void updateBalanceCalculatedFlag(AccountDocument accountDocument, Boolean flag) {
-        accountDocumentRepository.findAndUpdateBalanceCalculateFlagdById(accountDocument.getId(), flag);
-
-    }
 }

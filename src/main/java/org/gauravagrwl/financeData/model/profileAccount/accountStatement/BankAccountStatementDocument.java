@@ -57,6 +57,11 @@ public class BankAccountStatementDocument extends AccountStatementDocument {
             .comparing(BankAccountStatementDocument::getTransactionDate)
             .thenComparing(BankAccountStatementDocument::getType);
 
+    @Override
+    public BigDecimal getCalculatedStatementBalance() {
+        return getBalance();
+    }
+
     // public static Comparator<BankAccountStatementDocument>
     // sortBankStatmentBySerialNumber = Comparator
     // .comparingLong(BankAccountStatementDocument::getSno);

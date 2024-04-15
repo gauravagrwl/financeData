@@ -18,7 +18,6 @@ public class CsvMDYDateStringToDateConverter extends AbstractBeanField<String, L
 
     @Override
     protected Object convert(String value) throws CsvDataTypeMismatchException, CsvConstraintViolationException {
-        log.info("Parsing : " + value);
         LocalDate parse = LocalDate.parse(value, formatter);
         return parse;
 

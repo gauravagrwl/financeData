@@ -57,6 +57,11 @@ public class AssetsAccountDocument extends AccountDocument {
 
     @Override
     public BigDecimal getAccountStatementBalance() {
-        return null;
+        return getAmountInvestment();
+    }
+
+    @Override
+    public void balanceCalculationNeeded() {
+        this.setBalanceCalculatedFlag(Boolean.TRUE);
     }
 }
