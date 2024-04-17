@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-import com.opencsv.bean.MappingStrategy;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,18 +12,13 @@ import lombok.Setter;
 import org.gauravagrwl.financeData.helper.AccountTypeEnum;
 import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
 import org.gauravagrwl.financeData.model.audit.AuditMetadata;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.Currency;
-import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,7 +33,7 @@ import java.util.List;
         @JsonSubTypes.Type(value = AssetsAccountDocument.class, name = "AssetsAccount"),
 })
 @Component
-public abstract class AccountDocument {
+public abstract class AccountDocument implements UserAccountOperation {
 
     @MongoId
     private String id;
@@ -66,6 +60,8 @@ public abstract class AccountDocument {
 
     private String accountStatementCollectionName;
 
+    private String accountReportCollectionName;
+
     // User profile who holds the account
     private String profileDocumentId;
 
@@ -74,36 +70,16 @@ public abstract class AccountDocument {
 
     private AuditMetadata audit = new AuditMetadata();
 
+    private Boolean balanceCalculated = Boolean.FALSE;
+
     @Version
     private Integer version;
 
     //Needed for data to upload. Name_accounttype
     private String csvProfile;
 
-    // Indicator if respective Account Balance Is Calculated.
-    private Boolean balanceCalculatedFlag = Boolean.FALSE;
+    private Boolean updateAccountStatement = Boolean.FALSE;
+    private Boolean updateAccountReport = Boolean.FALSE;
 
-    public abstract MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(String mappingProfile);
-
-    public abstract Update getUpdateBalanceUpdateQuery(BigDecimal amount);
-
-    public Update getBalanceCalculatedFlagQuery(Boolean flag) {
-        return Update.update("isBalanceCalculated", flag);
-    }
-
-    public abstract Query findDuplicateRecordQuery(AccountStatementDocument statementDocument);
-
-    public abstract BigDecimal getAccountStatementBalance();
-
-    /**
-     * Set @param balanceCalculatedFlag which is required to calculate the account statement balance.
-     * True: Not needed. (Balance is calculated.)
-     * False: Needed (Balance is calculated.)
-     *
-     * @param flag
-     */
-    public abstract void balanceCalculationNeeded();
-
-    public abstract List<? extends AccountStatementDocument> calculateAccountBalance(List<? extends AccountStatementDocument> statementDocumentList);
 
 }

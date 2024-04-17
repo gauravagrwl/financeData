@@ -70,7 +70,7 @@ public class UploadController {
         }
 
         accountDocumentService.saveAccountStatementDocuments(statementDocumentList, accountDocument);
-        financeDataSyncService.calculateAccountBalance(accountDocument);
+        financeDataSyncService.calculateUpdateAccountStatement(accountDocument);
         return ResponseEntity.ok("Account statement updated for account id : " + accountId);
     }
 

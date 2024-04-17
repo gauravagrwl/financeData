@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -31,9 +32,13 @@ public class LoanAccountDocument extends AccountDocument {
     }
 
     @Override
-    public Update getUpdateBalanceUpdateQuery(BigDecimal amount) {
-        return Update.update("loanAmount", amount);
+    public Update retrieveUpdateAccountDocumentQuery() {
+        return null;
+    }
 
+    @Override
+    public Update getUpdateAccountStatementQuery(AccountStatementDocument accountStatementDocument) {
+        return null;
     }
 
     @Override
@@ -47,12 +52,18 @@ public class LoanAccountDocument extends AccountDocument {
     }
 
     @Override
-    public void balanceCalculationNeeded() {
-        this.setBalanceCalculatedFlag(Boolean.FALSE);
+    public List<? extends AccountStatementDocument> calculateAndUpdateAccountStatements(List<? extends AccountStatementDocument> statementDocumentList) {
+        return null;
     }
 
     @Override
-    public List<? extends AccountStatementDocument> calculateAccountBalance(List<? extends AccountStatementDocument> statementDocumentList) {
+    public List<? extends AccountReportDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
         return null;
+    }
+
+    @Override
+    public void updateNeededStatementOrReports(Boolean updateAccountStatement, Boolean updateAccountReport) {
+        this.setUpdateAccountStatement(updateAccountStatement);
+        this.setUpdateAccountReport(updateAccountReport);
     }
 }

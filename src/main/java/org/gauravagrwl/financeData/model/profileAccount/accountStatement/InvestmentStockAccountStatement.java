@@ -4,12 +4,16 @@ import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvBindByNames;
 import com.opencsv.bean.CsvCustomBindByName;
 import com.opencsv.bean.CsvCustomBindByNames;
+import lombok.Getter;
+import lombok.Setter;
 import org.gauravagrwl.financeData.helper.CsvAmountStringToBigDecimalConverter;
 import org.gauravagrwl.financeData.helper.CsvMDYDateStringToDateConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Getter
+@Setter
 public class InvestmentStockAccountStatement extends AccountStatementDocument {
 
     @CsvCustomBindByNames({
@@ -59,9 +63,4 @@ public class InvestmentStockAccountStatement extends AccountStatementDocument {
 
     private BigDecimal fee;
 
-
-    @Override
-    public BigDecimal getCalculatedStatementBalance() {
-        return null;
-    }
 }

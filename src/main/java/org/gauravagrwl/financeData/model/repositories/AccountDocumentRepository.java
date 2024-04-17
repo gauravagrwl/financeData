@@ -6,7 +6,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Update;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Hidden
@@ -16,10 +15,10 @@ public interface AccountDocumentRepository extends MongoRepository<AccountDocume
 
     public Boolean existsByIdAndProfileDocumentId(String id, String profileDocumentId);
 
-    @Update("{ '$set' : { 'accountBalance' : ?#{[1]} } }")
-    void findAndUpdateAccountBalanceById(String id, BigDecimal value);
+    @Update("{ '$set' : { 'updateAccountStatement' : ?#{[1]}, 'updateAccountReport' : ?#{[2]} } }")
+    void findAndUpdateUpdateAccountStatementAndUpdateAccountReportById(String id, Boolean updateAccountStatement, Boolean updateAccountReport);
 
-    @Update("{ '$set' : { 'balanceCalculatedFlag' : ?#{[1]} } }")
-    void findAndUpdateBalanceCalculateFlagdById(String id, Boolean bool);
+    @Update("{ '$set' : { 'balanceCalculated' : ?#{[1]} } }")
+    void findAndUpdateBalanceCalculatedById(String id, Boolean isBalanceCalculated);
 
 }

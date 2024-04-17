@@ -12,7 +12,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -81,12 +80,19 @@ public class AccountService {
     }
 
     public void setUpdateCalculateBalanceFlag(AccountDocument accountDocument) {
-        accountDocumentRepository.findAndUpdateBalanceCalculateFlagdById(accountDocument.getId(), accountDocument.getBalanceCalculatedFlag());
-        
+        accountDocumentRepository.findAndUpdateUpdateAccountStatementAndUpdateAccountReportById(accountDocument.getId(),
+                accountDocument.getUpdateAccountStatement(), accountDocument.getUpdateAccountReport());
+
     }
 
-    public void setUpdateAccountBalanceById(AccountDocument accountDocument, BigDecimal balance) {
-        accountDocumentRepository.findAndUpdateAccountBalanceById(accountDocument.getId(), balance);
+    public void setUpdateBlanceCalculatedIndicator(AccountDocument accountDocument) {
+        accountDocumentRepository.findAndUpdateUpdateAccountStatementAndUpdateAccountReportById(accountDocument.getId(),
+                accountDocument.getUpdateAccountStatement(), accountDocument.getUpdateAccountReport());
+    }
+
+
+    public void setisBalanceCalculatedeById(AccountDocument accountDocument) {
+        accountDocumentRepository.findAndUpdateBalanceCalculatedById(accountDocument.getId(), accountDocument.getBalanceCalculated());
 
     }
 

@@ -47,9 +47,4 @@ public class InvestmentCryptoAccountStatement extends AccountStatementDocument {
     private BigDecimal coinbase_total_inclusive_fees;
     private BigDecimal coinbase_fees;
     private String coinbase_notes;
-
-    @Override
-    public BigDecimal getCalculatedStatementBalance() {
-        return null;
-    }
 }

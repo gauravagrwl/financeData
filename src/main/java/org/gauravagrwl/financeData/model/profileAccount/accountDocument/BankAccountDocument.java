@@ -9,11 +9,14 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
+import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
+import org.gauravagrwl.financeData.model.reports.CashFlowReportDocument;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -61,13 +64,14 @@ public class BankAccountDocument extends AccountDocument {
     }
 
     @Override
-    public void balanceCalculationNeeded() {
-        this.setBalanceCalculatedFlag(Boolean.FALSE);
+    public Update retrieveUpdateAccountDocumentQuery() {
+        return Update.update("accountBalance", this.getAccountBalance());
     }
 
     @Override
-    public Update getUpdateBalanceUpdateQuery(BigDecimal amount) {
-        return Update.update("accountBalance", amount);
+    public Update getUpdateAccountStatementQuery(AccountStatementDocument accountStatementDocument) {
+        BankAccountStatementDocument statement = (BankAccountStatementDocument) accountStatementDocument;
+        return Update.update("balance", statement.getBalance());
     }
 
     @Override
@@ -83,7 +87,13 @@ public class BankAccountDocument extends AccountDocument {
     }
 
     @Override
-    public List<? extends AccountStatementDocument> calculateAccountBalance(List<? extends AccountStatementDocument> statementDocumentList) {
+    public void updateNeededStatementOrReports(Boolean updateAccountStatement, Boolean updateAccountReport) {
+        this.setUpdateAccountStatement(updateAccountStatement);
+        this.setUpdateAccountReport(updateAccountReport);
+    }
+
+    @Override
+    public List<? extends AccountStatementDocument> calculateAndUpdateAccountStatements(List<? extends AccountStatementDocument> statementDocumentList) {
         BigDecimal accountBalance = BigDecimal.ZERO;
         List<BankAccountStatementDocument> statementList = (List<BankAccountStatementDocument>) statementDocumentList;
         for (BankAccountStatementDocument statement : statementList) {
@@ -95,5 +105,9 @@ public class BankAccountDocument extends AccountDocument {
         return statementList;
     }
 
-
+    @Override
+    public List<? extends AccountReportDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
+        List<CashFlowReportDocument> cashFlowReportDocumentList = new ArrayList<>();
+        return cashFlowReportDocumentList;
+    }
 }

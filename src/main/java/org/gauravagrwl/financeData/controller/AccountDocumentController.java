@@ -45,7 +45,7 @@ public class AccountDocumentController {
         AccountDocument accountDocument = accountService.getAccountDocument(accountId, userName);
         accountDocumentService.deleteAccountStatementDocument(accountDocument,
                 statementId);
-        financeDataSyncService.calculateAccountBalance(accountDocument);
+        financeDataSyncService.calculateUpdateAccountStatement(accountDocument);
         return ResponseEntity.ok("Document is not removed.");
 
     }

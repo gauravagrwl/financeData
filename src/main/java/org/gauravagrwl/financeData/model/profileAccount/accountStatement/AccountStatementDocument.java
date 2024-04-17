@@ -9,8 +9,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-import java.math.BigDecimal;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -31,7 +29,4 @@ public abstract class AccountStatementDocument {
 
     @Version
     private Integer version;
-
-    public abstract BigDecimal getCalculatedStatementBalance();
-
 }

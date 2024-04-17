@@ -31,27 +31,35 @@ public class FinanceDataSyncService {
 
         profileService.getAllUserProfileDocument().forEach(userProfileDocument -> {
             for (AccountDocument userAccount : userProfileDocument.getUserAccounts()) {
-                calculateAccountBalance(userAccount);
+                calculateUpdateAccountStatement(userAccount);
             }
         });
     }
 
-    public void calculateAccountBalance(AccountDocument userAccount) {
-        if (!userAccount.getBalanceCalculatedFlag()) {
+    public void calculateUpdateAccountStatement(AccountDocument userAccount) {
+        if (userAccount.getUpdateAccountStatement()) {
             log.info("Calculating account balance for account: " + userAccount.getAccountNumber());
-            List<? extends AccountStatementDocument> updatedAccountStatement = userAccount.calculateAccountBalance(accountStatementDocumentService.getAccountStatementDocuments(userAccount));
-            for (AccountStatementDocument accountStatementDocument : updatedAccountStatement) {
-                Update updateDefination = Update.update("balance", accountStatementDocument.getCalculatedStatementBalance());
+            List<? extends AccountStatementDocument> updatedAccountStatementList = userAccount.calculateAndUpdateAccountStatements(accountStatementDocumentService.getAccountStatementDocuments(userAccount));
+            for (AccountStatementDocument accountStatementDocument : updatedAccountStatementList) {
+                Update updateDefination = userAccount.getUpdateAccountStatementQuery(accountStatementDocument);
                 template.updateFirst(FinanceDataHelper.findById(accountStatementDocument.getId()),
                         updateDefination, AccountStatementDocument.class, userAccount.getAccountStatementCollectionName());
             }
-            accountService.setUpdateAccountBalanceById(userAccount, userAccount.getAccountStatementBalance());
-            userAccount.setBalanceCalculatedFlag(Boolean.TRUE);
-            accountService.setUpdateCalculateBalanceFlag(userAccount);
+            Update updateAccountDocument = userAccount.retrieveUpdateAccountDocumentQuery();
+            template.updateFirst(FinanceDataHelper.findById(userAccount.getId()), updateAccountDocument, AccountDocument.class);
+
+//            accountService.setUpdateAccountBalanceById(userAccount, userAccount.getAccountStatementBalance());
+            userAccount.setBalanceCalculated(Boolean.TRUE);
+            accountService.setisBalanceCalculatedeById(userAccount);
         } else {
             log.info("Balance is not calculated as flag is false for account: " + userAccount.getAccountNumber());
         }
+    }
 
+    public void calculateUpdateAccountReport(AccountDocument userAccount) {
+        if (userAccount.getUpdateAccountReport()) {
+//            List<? extends AccountReportDocument> updateReportList = userAccount.calculateAndUpdateAccountReports();
+        }
 
     }
 

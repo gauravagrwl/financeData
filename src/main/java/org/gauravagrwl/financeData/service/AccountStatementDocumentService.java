@@ -50,17 +50,18 @@ public class AccountStatementDocumentService {
                     }
                     mongoTemplate.save(statement, documentCollectionName);
                 });
+                accountDocument.updateNeededStatementOrReports(true, true);
                 log.info("All statements are recorded");
             }
             case LOAN, INVESTMENT, ASSETS -> {
                 accountStatementList.forEach(statement -> {
                     mongoTemplate.save(statement, documentCollectionName);
                 });
-
+                accountDocument.updateNeededStatementOrReports(true, true);
                 log.info("All statements are recorded");
             }
         }
-        accountDocument.balanceCalculationNeeded();
+
         accountService.setUpdateCalculateBalanceFlag(accountDocument);
         log.info("out saveAccountStatementDocuments");
     }
@@ -121,7 +122,7 @@ public class AccountStatementDocumentService {
                     AccountStatementDocument.class,
                     accountDocument.getAccountStatementCollectionName());
         }
-        accountDocument.balanceCalculationNeeded();
+        accountDocument.updateNeededStatementOrReports(true, true);
         accountService.setUpdateCalculateBalanceFlag(accountDocument);
         log.info("out deleteAccountStatementDocument");
     }
