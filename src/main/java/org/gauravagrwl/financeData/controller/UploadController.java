@@ -13,7 +13,7 @@ import org.gauravagrwl.financeData.model.profileAccount.accountStatement.Investm
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentStockAccountStatement;
 import org.gauravagrwl.financeData.service.AccountService;
 import org.gauravagrwl.financeData.service.AccountStatementDocumentService;
-import org.gauravagrwl.financeData.service.FinanceDataSyncService;
+import org.gauravagrwl.financeData.service.FinanceDataCommonService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +38,7 @@ public class UploadController {
     Logger LOGGER = LoggerFactory.getLogger(UploadController.class);
 
     @Autowired
-    FinanceDataSyncService financeDataSyncService;
+    FinanceDataCommonService financeDataSyncService;
 
 
     public UploadController(AccountStatementDocumentService accountDocumentService, AccountService accountService) {

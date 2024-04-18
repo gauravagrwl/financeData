@@ -29,4 +29,5 @@ public class HoldingTransactions {
 
     private String descriptions;
 
+
 }

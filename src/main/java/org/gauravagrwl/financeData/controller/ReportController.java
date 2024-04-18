@@ -1,15 +1,11 @@
 package org.gauravagrwl.financeData.controller;
 
 import org.gauravagrwl.financeData.service.CashFlowService;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-import java.util.Set;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping(value = "/report")
@@ -22,11 +18,8 @@ public class ReportController {
     }
 
     @GetMapping("/getCashFlowReportYeaer")
-    public ResponseEntity<Set<Integer>> getCashFlowReportYeaer(@RequestParam(required = false) String userName) {
-
-        Set<Integer> cashFlowReportYearList = cashFlowService.getCashFlowReportYearList(userName);
-
-        return ResponseEntity.ok(cashFlowReportYearList);
+    public ResponseEntity<?> getCashFlowReportYeaer(@RequestParam(required = false) String userName) {
+        return ResponseEntity.ok("");
     }
 
 }

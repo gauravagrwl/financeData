@@ -11,6 +11,7 @@ import org.gauravagrwl.financeData.model.profileAccount.accountStatement.Account
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
 import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
 import org.gauravagrwl.financeData.model.reports.CashFlowReportDocument;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -109,5 +110,13 @@ public class BankAccountDocument extends AccountDocument {
     public List<? extends AccountReportDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
         List<CashFlowReportDocument> cashFlowReportDocumentList = new ArrayList<>();
         return cashFlowReportDocumentList;
+    }
+
+    @Override
+    public Query statementSortQuery() {
+        Sort sort = Sort.by(Sort.Direction.ASC, "transactionDate").and(Sort.by(Sort.Direction.ASC, "type"));
+        Query query = new Query();
+        query.with(sort);
+        return query;
     }
 }

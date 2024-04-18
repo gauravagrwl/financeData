@@ -29,4 +29,6 @@ public interface UserAccountOperation {
     List<? extends AccountStatementDocument> calculateAndUpdateAccountStatements(List<? extends AccountStatementDocument> statementDocumentList);
 
     List<? extends AccountReportDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList);
+
+    Query statementSortQuery();
 }

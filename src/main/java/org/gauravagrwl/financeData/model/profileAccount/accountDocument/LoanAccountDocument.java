@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
 import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -65,5 +66,13 @@ public class LoanAccountDocument extends AccountDocument {
     public void updateNeededStatementOrReports(Boolean updateAccountStatement, Boolean updateAccountReport) {
         this.setUpdateAccountStatement(updateAccountStatement);
         this.setUpdateAccountReport(updateAccountReport);
+    }
+
+    @Override
+    public Query statementSortQuery() {
+        Sort sort = Sort.by(Sort.Direction.ASC, "transactionDate").and(Sort.by(Sort.Direction.ASC, "type"));
+        Query query = new Query();
+        query.with(sort);
+        return query;
     }
 }

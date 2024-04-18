@@ -7,7 +7,6 @@ import org.gauravagrwl.financeData.exception.FinanceDataException;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.gauravagrwl.financeData.model.repositories.AccountDocumentRepository;
-import org.gauravagrwl.financeData.model.repositories.AccountStatementDocumentRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
@@ -21,8 +20,7 @@ public class AccountService {
     private AccountDocumentRepository accountDocumentRepository;
     private ProfileService profileService;
 
-    public AccountService(AccountDocumentRepository accountDocumentRepository, ProfileService profileService,
-                          AccountStatementDocumentRepository accountTransactionDocumentRepository) {
+    public AccountService(AccountDocumentRepository accountDocumentRepository, ProfileService profileService) {
         this.accountDocumentRepository = accountDocumentRepository;
         this.profileService = profileService;
     }

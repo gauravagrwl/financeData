@@ -7,8 +7,6 @@ import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -92,16 +90,15 @@ public class AccountStatementDocumentService {
     public List<? extends AccountStatementDocument> getAccountStatementDocuments(
             AccountDocument accountDocument) {
         log.info("in getAccountStatementDocuments with sort");
-        Sort sort = Sort.by(Direction.ASC, "transactionDate").and(Sort.by(Direction.ASC, "type"));
-        Query query = new Query();
-        query.with(sort);
+        Query query = accountDocument.statementSortQuery();
         // PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, sort);
         List<AccountStatementDocument> accountStatementList = mongoTemplate.find(query,
                 AccountStatementDocument.class,
                 accountDocument.getAccountStatementCollectionName());
-        log.info("in getAccountStatementDocuments with sort");
+        log.info("out getAccountStatementDocuments with sort");
         return accountStatementList;
     }
+
 
     public void deleteAccountStatementDocument(AccountDocument accountDocument, String statementId) {
         log.info("in deleteAccountStatementDocument");

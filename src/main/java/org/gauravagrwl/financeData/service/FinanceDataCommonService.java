@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
@@ -13,7 +14,7 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class FinanceDataSyncService {
+public class FinanceDataCommonService {
 
     @Autowired
     MongoTemplate template;
@@ -54,11 +55,15 @@ public class FinanceDataSyncService {
         } else {
             log.info("Balance is not calculated as flag is false for account: " + userAccount.getAccountNumber());
         }
+        calculateUpdateAccountReport(userAccount);
     }
 
     public void calculateUpdateAccountReport(AccountDocument userAccount) {
         if (userAccount.getUpdateAccountReport()) {
-//            List<? extends AccountReportDocument> updateReportList = userAccount.calculateAndUpdateAccountReports();
+            List<? extends AccountReportDocument> updateReportList = userAccount.calculateAndUpdateAccountReports(accountStatementDocumentService.getAccountStatementDocuments(userAccount));
+            for (AccountReportDocument ard : updateReportList) {
+                template.insert(ard, "ReportCollections");
+            }
         }
 
     }

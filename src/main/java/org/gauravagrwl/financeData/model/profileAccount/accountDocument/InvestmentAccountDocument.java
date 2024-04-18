@@ -14,13 +14,18 @@ import org.gauravagrwl.financeData.model.profileAccount.accountStatement.Investm
 import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentStockAccountStatement;
 import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
 import org.gauravagrwl.financeData.model.reports.CryptoHoldingDocument;
+import org.gauravagrwl.financeData.model.reports.HoldingTransactions;
 import org.gauravagrwl.financeData.model.reports.StockHoldingDocument;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This class supports below Institution Sub Category:
@@ -113,9 +118,23 @@ public class InvestmentAccountDocument extends AccountDocument {
     @Override
     public List<? extends AccountReportDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
         if (AccountTypeEnum.STOCK.compareTo(this.getAccountType()) == 0) {
+            List<InvestmentStockAccountStatement> statementList = (List<InvestmentStockAccountStatement>) accountStatementList;
+
+            Map<String, List<InvestmentStockAccountStatement>> instrument_Trans =
+                    statementList.stream().collect(Collectors.groupingBy(InvestmentStockAccountStatement::getInstrument));
             //Stock processing
             //TODO: Update holding status
             List<StockHoldingDocument> stockHoldingDocumentList = new ArrayList<>();
+            instrument_Trans.remove("");
+            Set<String> instruments = instrument_Trans.keySet();
+            for (String s : instruments) {
+                StockHoldingDocument holdingDocument = new StockHoldingDocument();
+                holdingDocument.setAccountDocumentId(this.getId());
+                holdingDocument.setInstrument(s);
+                holdingDocument.getHoldingTransactionList().addAll(createHoldingTransaction(instrument_Trans.get(s)));
+                holdingDocument.calculateHoldingReport();
+                stockHoldingDocumentList.add(holdingDocument);
+            }
             //Steps:
             // Insert symbol and transaction in TransactionDocument
             return stockHoldingDocumentList;
@@ -126,6 +145,24 @@ public class InvestmentAccountDocument extends AccountDocument {
             return cryptoHoldingDocumentList;
         }
     }
+
+    private List<HoldingTransactions> createHoldingTransaction(List<InvestmentStockAccountStatement> investmentStockAccountStatements) {
+        List<HoldingTransactions> holdingTrans = new ArrayList<>();
+        for (InvestmentStockAccountStatement s : investmentStockAccountStatements) {
+            HoldingTransactions ht = new HoldingTransactions();
+            ht.setAccountStatementId(s.getId());
+            ht.setSettleDate(s.getSettleDate());
+            ht.setInstrument(s.getInstrument());
+            ht.setTransCode(s.getTransCode());
+            ht.setQuantity(s.getQuantity());
+            ht.setRate(s.getRate());
+            ht.setAmount(s.getAmount());
+            ht.setDescriptions(s.getDescription());
+            holdingTrans.add(ht);
+        }
+        return holdingTrans;
+    }
+
 
     @Override
     public void updateNeededStatementOrReports(Boolean updateAccountStatement, Boolean updateAccountReport) {
@@ -215,5 +252,21 @@ public class InvestmentAccountDocument extends AccountDocument {
         this.amountInvestment = this.amountInvestment.add(this.cashInvestment).subtract(this.cashReturn);
         log.info("Cash Investment: " + this.cashInvestment + " total investment: " + this.amountInvestment);
 //        return statementList;
+    }
+
+    @Override
+    public Query statementSortQuery() {
+        if (AccountTypeEnum.STOCK.compareTo(this.getAccountType()) == 0) {
+            Sort sort = Sort.by(Sort.Direction.ASC, "settleDate");
+            Query query = new Query();
+            query.with(sort);
+            return query;
+
+        } else {
+            Sort sort = Sort.by(Sort.Direction.ASC, "transactionDate").and(Sort.by(Sort.Direction.ASC, "type"));
+            Query query = new Query();
+            query.with(sort);
+            return query;
+        }
     }
 }
