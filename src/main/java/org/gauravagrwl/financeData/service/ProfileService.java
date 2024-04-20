@@ -1,13 +1,12 @@
 package org.gauravagrwl.financeData.service;
 
-import java.util.List;
-
+import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.exception.FinanceDataException;
-import org.gauravagrwl.financeData.model.profile.UserProfileDocument;
+import org.gauravagrwl.financeData.model.profile.UserProfileCollection;
 import org.gauravagrwl.financeData.model.repositories.ProfileDocumentRepository;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -19,14 +18,14 @@ public class ProfileService {
         this.profileDocumentRepository = profileDocumentRepository;
     }
 
-    public String createProfile(UserProfileDocument userProfile) {
+    public String createProfile(UserProfileCollection userProfile) {
         String userProfileId = profileDocumentRepository.insert(userProfile).getId();
         log.info("Document Created Successfully ID :" + userProfileId);
         return userProfileId;
     }
 
-    public UserProfileDocument getUserProfileDocument(String userName) {
-        List<UserProfileDocument> byUserName = profileDocumentRepository.findByUserName(userName);
+    public UserProfileCollection getUserProfileDocument(String userName) {
+        List<UserProfileCollection> byUserName = profileDocumentRepository.findByUserName(userName);
         if (byUserName.size() != 1) {
             throw new FinanceDataException("No user found!");
         }
@@ -38,8 +37,8 @@ public class ProfileService {
         profileDocumentRepository.deleteById(userProfileID);
     }
 
-    public List<UserProfileDocument> getAllUserProfileDocument() {
-        List<UserProfileDocument> allUserProfile = profileDocumentRepository.findAll();
+    public List<UserProfileCollection> getAllUserProfileDocument() {
+        List<UserProfileCollection> allUserProfile = profileDocumentRepository.findAll();
         if (allUserProfile.size() != 1) {
             throw new FinanceDataException("No user found!");
         }

@@ -1,12 +1,12 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
+package org.gauravagrwl.financeData.model.profileAccount.accountCollection;
 
 import com.opencsv.bean.MappingStrategy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
-import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
+import org.gauravagrwl.financeData.model.profileAccount.reportCollection.ReportCollection;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -18,7 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @Setter
 @Getter
-public class LoanAccountDocument extends AccountDocument {
+public class LoanAccountCollection extends AccountCollection {
 
     private BigDecimal loanAmount;
     private BigDecimal remaingAmount;
@@ -58,14 +58,15 @@ public class LoanAccountDocument extends AccountDocument {
     }
 
     @Override
-    public List<? extends AccountReportDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
+    public List<? extends ReportCollection> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
         return null;
     }
 
     @Override
-    public void updateNeededStatementOrReports(Boolean updateAccountStatement, Boolean updateAccountReport) {
-        this.setUpdateAccountStatement(updateAccountStatement);
-        this.setUpdateAccountReport(updateAccountReport);
+    public void updateNeededFlags(Boolean updateAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport) {
+        this.setUpdateAccountStatementNeeded(updateAccountStatement);
+        this.setUpdateAccountReportNeeded(updateAccountReport);
+        this.setUpdateCashFlowReportNeeded(updateCashFlowReport);
     }
 
     @Override
@@ -75,4 +76,10 @@ public class LoanAccountDocument extends AccountDocument {
         query.with(sort);
         return query;
     }
+
+    @Override
+    public void resetFields() {
+
+    }
+
 }

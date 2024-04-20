@@ -1,4 +1,4 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
+package org.gauravagrwl.financeData.model.profileAccount.accountCollection;
 
 import com.opencsv.bean.HeaderColumnNameMappingStrategyBuilder;
 import com.opencsv.bean.MappingStrategy;
@@ -9,13 +9,13 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.gauravagrwl.financeData.helper.AccountTypeEnum;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentCryptoAccountStatement;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentStockAccountStatement;
-import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
-import org.gauravagrwl.financeData.model.reports.CryptoHoldingDocument;
-import org.gauravagrwl.financeData.model.reports.HoldingTransactions;
-import org.gauravagrwl.financeData.model.reports.StockHoldingDocument;
+import org.gauravagrwl.financeData.model.profileAccount.reportCollection.CryptoHoldingCollection;
+import org.gauravagrwl.financeData.model.profileAccount.reportCollection.HoldingTransactions;
+import org.gauravagrwl.financeData.model.profileAccount.reportCollection.ReportCollection;
+import org.gauravagrwl.financeData.model.profileAccount.reportCollection.StockHoldingCollection;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.InvestmentCryptoAccountStatement;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.InvestmentStockAccountStatement;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 @Setter
 @Getter
 @Slf4j
-public class InvestmentAccountDocument extends AccountDocument {
+public class InvestmentAccountCollection extends AccountCollection {
 
     // Total Amount Invested.
     private BigDecimal amountInvestment = BigDecimal.ZERO;
@@ -116,33 +116,33 @@ public class InvestmentAccountDocument extends AccountDocument {
     }
 
     @Override
-    public List<? extends AccountReportDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
+    public List<? extends ReportCollection> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
         if (AccountTypeEnum.STOCK.compareTo(this.getAccountType()) == 0) {
             List<InvestmentStockAccountStatement> statementList = (List<InvestmentStockAccountStatement>) accountStatementList;
 
             Map<String, List<InvestmentStockAccountStatement>> instrument_Trans =
-                    statementList.stream().collect(Collectors.groupingBy(InvestmentStockAccountStatement::getInstrument));
+                    statementList.stream().collect(Collectors.groupingBy(InvestmentStockAccountStatement::getStock_instrument));
             //Stock processing
             //TODO: Update holding status
-            List<StockHoldingDocument> stockHoldingDocumentList = new ArrayList<>();
+            List<StockHoldingCollection> stockHoldingCollectionList = new ArrayList<>();
             instrument_Trans.remove("");
             Set<String> instruments = instrument_Trans.keySet();
             for (String s : instruments) {
-                StockHoldingDocument holdingDocument = new StockHoldingDocument();
+                StockHoldingCollection holdingDocument = new StockHoldingCollection();
                 holdingDocument.setAccountDocumentId(this.getId());
                 holdingDocument.setInstrument(s);
                 holdingDocument.getHoldingTransactionList().addAll(createHoldingTransaction(instrument_Trans.get(s)));
-                holdingDocument.calculateHoldingReport();
-                stockHoldingDocumentList.add(holdingDocument);
+//                holdingDocument.calculateHoldingReport();
+                stockHoldingCollectionList.add(holdingDocument);
             }
             //Steps:
             // Insert symbol and transaction in TransactionDocument
-            return stockHoldingDocumentList;
+            return stockHoldingCollectionList;
         } else {
             // crypto processing
             //TODO: Update holding status
-            List<CryptoHoldingDocument> cryptoHoldingDocumentList = new ArrayList<>();
-            return cryptoHoldingDocumentList;
+            List<CryptoHoldingCollection> cryptoHoldingCollectionList = new ArrayList<>();
+            return cryptoHoldingCollectionList;
         }
     }
 
@@ -152,7 +152,7 @@ public class InvestmentAccountDocument extends AccountDocument {
             HoldingTransactions ht = new HoldingTransactions();
             ht.setAccountStatementId(s.getId());
             ht.setSettleDate(s.getSettleDate());
-            ht.setInstrument(s.getInstrument());
+            ht.setInstrument(s.getStock_instrument());
             ht.setTransCode(s.getTransCode());
             ht.setQuantity(s.getQuantity());
             ht.setRate(s.getRate());
@@ -165,9 +165,10 @@ public class InvestmentAccountDocument extends AccountDocument {
 
 
     @Override
-    public void updateNeededStatementOrReports(Boolean updateAccountStatement, Boolean updateAccountReport) {
-        this.setUpdateAccountStatement(updateAccountStatement);
-        this.setUpdateAccountReport(updateAccountReport);
+    public void updateNeededFlags(Boolean updateAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport) {
+        this.setUpdateAccountStatementNeeded(updateAccountStatement);
+        this.setUpdateAccountReportNeeded(updateAccountReport);
+        this.setUpdateCashFlowReportNeeded(updateCashFlowReport);
     }
 
     public void updateStockStatement(List<InvestmentStockAccountStatement> statementList) {
@@ -257,7 +258,7 @@ public class InvestmentAccountDocument extends AccountDocument {
     @Override
     public Query statementSortQuery() {
         if (AccountTypeEnum.STOCK.compareTo(this.getAccountType()) == 0) {
-            Sort sort = Sort.by(Sort.Direction.ASC, "settleDate");
+            Sort sort = Sort.by(Sort.Direction.ASC, "settleDate").and(Sort.by(Sort.Direction.ASC, "transCode"));
             Query query = new Query();
             query.with(sort);
             return query;
@@ -268,5 +269,25 @@ public class InvestmentAccountDocument extends AccountDocument {
             query.with(sort);
             return query;
         }
+    }
+
+    @Override
+    public void resetFields() {
+        this.setUpdateAccountStatementNeeded(Boolean.FALSE);
+        this.setUpdateAccountReportNeeded(Boolean.FALSE);
+        this.setUpdateCashFlowReportNeeded(Boolean.FALSE);
+        this.setHardStopDate(null);
+        this.setIsActive(Boolean.TRUE);
+        this.setBalanceCalculated(Boolean.FALSE);
+
+        amountInvestment = BigDecimal.ZERO;
+        cashInvestment = BigDecimal.ZERO;
+
+        // Total Amount Returned.
+        amountReturn = BigDecimal.ZERO;
+        cashReturn = BigDecimal.ZERO;
+        // Is this Account Auto Tradeable.
+        isAutoTradable = Boolean.FALSE;
+
     }
 }

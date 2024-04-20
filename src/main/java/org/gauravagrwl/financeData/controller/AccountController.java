@@ -1,26 +1,18 @@
 package org.gauravagrwl.financeData.controller;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.helper.AccountTypeEnum;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
 import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
-import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
+import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
 import org.gauravagrwl.financeData.service.AccountService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/profileAccount")
@@ -35,29 +27,27 @@ public class AccountController {
     }
 
     /**
-     * 
      * @param userName
-     * @param accountDocument
+     * @param accountCollection
      * @return
      */
     @PostMapping(value = "/addAccount", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> addAccount(@RequestParam(required = true) String userName,
-            @RequestBody AccountDocument accountDocument) {
-        String userAccountId = accountService.addUserAccount(accountDocument, userName);
+                                             @RequestBody AccountCollection accountCollection) {
+        String userAccountId = accountService.addUserAccount(accountCollection, userName);
         return ResponseEntity.ok("Account Added with Id: " + userAccountId);
     }
 
     /**
-     * 
      * @param userName
-     * @param accountDocuments
+     * @param accountCollections
      * @return
      */
     @PostMapping(value = "/addAccounts", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Map<String, String>> addAccounts(@RequestParam(required = true) String userName,
-            @RequestBody List<AccountDocument> accountDocuments) {
+                                                           @RequestBody List<AccountCollection> accountCollections) {
         Map<String, String> result = new HashMap<>();
-        accountDocuments.forEach(accountDocument -> {
+        accountCollections.forEach(accountDocument -> {
             try {
                 String userAccountId = accountService.addUserAccount(accountDocument, userName);
                 result.put(accountDocument.getAccountNumber(), "Account Added with Id: " + userAccountId);
@@ -70,39 +60,36 @@ public class AccountController {
     }
 
     /**
-     * 
      * @param userName
      * @param accountId
      * @return
      */
     @GetMapping(value = "/getAccount", produces = "application/json")
-    public ResponseEntity<AccountDocument> getProfileAccount(
+    public ResponseEntity<AccountCollection> getProfileAccount(
             @RequestParam(name = "userName", required = true) String userName,
             @RequestParam(name = "accountId", required = true) String accountId) {
-        AccountDocument accountDocument = accountService.getAccountDocument(accountId, userName);
-        return ResponseEntity.ok(accountDocument);
+        AccountCollection accountCollection = accountService.getAccountDocument(accountId, userName);
+        return ResponseEntity.ok(accountCollection);
     }
 
     /**
-     * 
      * @param userName
      * @param instCategory
      * @param accountType
      * @return
      */
     @GetMapping(value = "/getAccounts", produces = "application/json")
-    public ResponseEntity<List<AccountDocument>> getProfileAccounts(
+    public ResponseEntity<List<AccountCollection>> getProfileAccounts(
             @RequestParam(name = "userName", required = true) String userName,
             @RequestParam(name = "institutionCategory", required = false) InstitutionCategoryEnum instCategory,
             @RequestParam(name = "accountType", required = false) AccountTypeEnum accountType) {
-        List<AccountDocument> userAccounts = accountService.getUserAccounts(userName);
+        List<AccountCollection> userAccounts = accountService.getUserAccounts(userName);
         userAccounts.forEach(account -> account
                 .setAccountNumber(FinanceDataHelper.getAccountDisplayNumber(account.getAccountNumber())));
         return ResponseEntity.ok(userAccounts);
     }
 
     /**
-     * 
      * @param userName
      * @param accountId
      * @return

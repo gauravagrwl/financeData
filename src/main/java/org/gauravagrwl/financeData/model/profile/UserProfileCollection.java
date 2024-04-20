@@ -1,9 +1,12 @@
 package org.gauravagrwl.financeData.model.profile;
 
-import java.util.List;
-
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.gauravagrwl.financeData.model.audit.AuditMetadata;
-import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
+import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
 import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -11,18 +14,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @Document(collection = "profile_collections")
-public class UserProfileDocument {
+public class UserProfileCollection {
 
     @MongoId
     private String id;
@@ -46,7 +45,7 @@ public class UserProfileDocument {
 
     @ReadOnlyProperty
     @DocumentReference(lookup = "{'profileDocumentId':?#{#self._id} }", lazy = true)
-    private List<? extends AccountDocument> userAccounts;
+    private List<? extends AccountCollection> userAccounts;
 
     private AuditMetadata audit = new AuditMetadata();
 

@@ -1,4 +1,4 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
+package org.gauravagrwl.financeData.model.profileAccount.accountCollection;
 
 import lombok.*;
 

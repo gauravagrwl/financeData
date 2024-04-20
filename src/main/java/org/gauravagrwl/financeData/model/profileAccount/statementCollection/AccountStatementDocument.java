@@ -1,4 +1,4 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountStatement;
+package org.gauravagrwl.financeData.model.profileAccount.statementCollection;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +20,7 @@ public abstract class AccountStatementDocument {
 
     private String accountDocumentId;
 
+    //Indicates if this statement is processed in Reports
     @Indexed
     private Boolean reconciled = Boolean.FALSE;
 
@@ -29,4 +30,6 @@ public abstract class AccountStatementDocument {
 
     @Version
     private Integer version;
+
+    public abstract String findKeyName();
 }

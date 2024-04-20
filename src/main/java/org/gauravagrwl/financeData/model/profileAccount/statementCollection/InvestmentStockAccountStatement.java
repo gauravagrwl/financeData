@@ -1,4 +1,4 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountStatement;
+package org.gauravagrwl.financeData.model.profileAccount.statementCollection;
 
 import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvBindByNames;
@@ -34,7 +34,7 @@ public class InvestmentStockAccountStatement extends AccountStatementDocument {
     @CsvBindByNames({
             @CsvBindByName(column = "Instrument", profiles = {
                     "Robinhood_STOCK"}),})
-    private String instrument;
+    private String stock_instrument;
 
     @CsvBindByNames({
             @CsvBindByName(column = "Description", profiles = {
@@ -63,4 +63,8 @@ public class InvestmentStockAccountStatement extends AccountStatementDocument {
 
     private BigDecimal fee;
 
+    @Override
+    public String findKeyName() {
+        return stock_instrument;
+    }
 }

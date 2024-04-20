@@ -1,4 +1,4 @@
-package org.gauravagrwl.financeData.model.reports;
+package org.gauravagrwl.financeData.model.profileAccount.reportCollection;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

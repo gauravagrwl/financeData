@@ -6,11 +6,11 @@ import com.opencsv.bean.MappingStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.gauravagrwl.financeData.exception.FinanceDataException;
 import org.gauravagrwl.financeData.helper.AccountTypeEnum;
-import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentCryptoAccountStatement;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.InvestmentStockAccountStatement;
+import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.BankAccountStatementDocument;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.InvestmentCryptoAccountStatement;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.InvestmentStockAccountStatement;
 import org.gauravagrwl.financeData.service.AccountService;
 import org.gauravagrwl.financeData.service.AccountStatementDocumentService;
 import org.gauravagrwl.financeData.service.FinanceDataCommonService;
@@ -55,43 +55,41 @@ public class UploadController {
         if ((file.isEmpty()) || (!accountService.isUserAccountExist(accountId, userName))) {
             return ResponseEntity.badRequest().body("No Account exist for this user.");
         }
-        AccountDocument accountDocument = accountService.getAccountDocument(accountId, userName);
+        AccountCollection accountCollection = accountService.getAccountDocument(accountId, userName);
 
-        String profileType = accountDocument.getCsvProfile();
+        List<? extends AccountStatementDocument> statementDocumentList;
 
-        List<? extends AccountStatementDocument> statementDocumentList = new ArrayList<>();
-
-        switch (accountDocument.getInstitutionCategory()) {
-            case BANKING -> statementDocumentList = processBankStatement(file, accountDocument);
-            case INVESTMENT -> statementDocumentList = processInvestmentStatement(file, accountDocument);
-            case LOAN -> statementDocumentList = processLoanStatement(file, accountDocument);
-            case ASSETS -> statementDocumentList = processAssetsStatement(file, accountDocument);
+        switch (accountCollection.getInstitutionCategory()) {
+            case BANKING -> statementDocumentList = processBankStatement(file, accountCollection);
+            case INVESTMENT -> statementDocumentList = processInvestmentStatement(file, accountCollection);
+            case LOAN -> statementDocumentList = processLoanStatement(file, accountCollection);
+            case ASSETS -> statementDocumentList = processAssetsStatement(file, accountCollection);
             default -> throw new FinanceDataException("No mapping strategy defined.");
         }
 
-        accountDocumentService.saveAccountStatementDocuments(statementDocumentList, accountDocument);
-        financeDataSyncService.calculateUpdateAccountStatement(accountDocument);
+        accountDocumentService.saveAccountStatementDocuments(statementDocumentList, accountCollection);
+        financeDataSyncService.calculateUpdateAccountStatement(accountCollection);
         return ResponseEntity.ok("Account statement updated for account id : " + accountId);
     }
 
-    private List<? extends AccountStatementDocument> processAssetsStatement(MultipartFile file, AccountDocument accountDocument) {
+    private List<? extends AccountStatementDocument> processAssetsStatement(MultipartFile file, AccountCollection accountCollection) {
         return null;
     }
 
-    private List<? extends AccountStatementDocument> processLoanStatement(MultipartFile file, AccountDocument accountDocument) {
+    private List<? extends AccountStatementDocument> processLoanStatement(MultipartFile file, AccountCollection accountCollection) {
         return null;
     }
 
-    private List<? extends AccountStatementDocument> processInvestmentStatement(MultipartFile file, AccountDocument accountDocument) throws IOException {
+    private List<? extends AccountStatementDocument> processInvestmentStatement(MultipartFile file, AccountCollection accountCollection) throws IOException {
         List<? extends AccountStatementDocument> statementList = new ArrayList<>();
 
-        if (AccountTypeEnum.STOCK.compareTo(accountDocument.getAccountType()) == 0) {
-            MappingStrategy<InvestmentStockAccountStatement> headerColumnNameMappingStrategy = (MappingStrategy<InvestmentStockAccountStatement>) accountDocument.getHeaderColumnNameMappingStrategy(accountDocument.getCsvProfile());
+        if (AccountTypeEnum.STOCK.compareTo(accountCollection.getAccountType()) == 0) {
+            MappingStrategy<InvestmentStockAccountStatement> headerColumnNameMappingStrategy = (MappingStrategy<InvestmentStockAccountStatement>) accountCollection.getHeaderColumnNameMappingStrategy(accountCollection.getCsvProfile());
             InputStreamReader reader = new InputStreamReader(file.getInputStream());
 
             CsvToBean<InvestmentStockAccountStatement> csvToBean = new CsvToBeanBuilder<InvestmentStockAccountStatement>(
                     reader)
-                    .withProfile(accountDocument.getCsvProfile())
+                    .withProfile(accountCollection.getCsvProfile())
                     .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
                     .withMappingStrategy(headerColumnNameMappingStrategy)
                     .build();
@@ -100,12 +98,12 @@ public class UploadController {
             csvToBean.iterator().forEachRemaining(transactionList::add);
             statementList = transactionList;
         } else {
-            MappingStrategy<InvestmentCryptoAccountStatement> headerColumnNameMappingStrategy = (MappingStrategy<InvestmentCryptoAccountStatement>) accountDocument.getHeaderColumnNameMappingStrategy(accountDocument.getCsvProfile());
+            MappingStrategy<InvestmentCryptoAccountStatement> headerColumnNameMappingStrategy = (MappingStrategy<InvestmentCryptoAccountStatement>) accountCollection.getHeaderColumnNameMappingStrategy(accountCollection.getCsvProfile());
             InputStreamReader reader = new InputStreamReader(file.getInputStream());
 
             CsvToBean<InvestmentCryptoAccountStatement> csvToBean = new CsvToBeanBuilder<InvestmentCryptoAccountStatement>(
                     reader)
-                    .withProfile(accountDocument.getCsvProfile())
+                    .withProfile(accountCollection.getCsvProfile())
                     .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
                     .withMappingStrategy(headerColumnNameMappingStrategy)
                     .build();
@@ -117,14 +115,14 @@ public class UploadController {
         return statementList;
     }
 
-    private List<BankAccountStatementDocument> processBankStatement(MultipartFile file, AccountDocument accountDocument) throws IOException {
-        MappingStrategy<BankAccountStatementDocument> headerColumnNameMappingStrategy = (MappingStrategy<BankAccountStatementDocument>) accountDocument.getHeaderColumnNameMappingStrategy(accountDocument.getCsvProfile());
+    private List<BankAccountStatementDocument> processBankStatement(MultipartFile file, AccountCollection accountCollection) throws IOException {
+        MappingStrategy<BankAccountStatementDocument> headerColumnNameMappingStrategy = (MappingStrategy<BankAccountStatementDocument>) accountCollection.getHeaderColumnNameMappingStrategy(accountCollection.getCsvProfile());
 
         InputStreamReader reader = new InputStreamReader(file.getInputStream());
 
         CsvToBean<BankAccountStatementDocument> csvToBean = new CsvToBeanBuilder<BankAccountStatementDocument>(
                 reader)
-                .withProfile(accountDocument.getCsvProfile())
+                .withProfile(accountCollection.getCsvProfile())
                 .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
                 .withMappingStrategy(headerColumnNameMappingStrategy)
                 .build();
@@ -137,7 +135,7 @@ public class UploadController {
             } else {
                 transDoc.setDebit(transDoc.getTransient_amount().abs());
             }
-            transDoc.setAccountDocumentId(accountDocument.getId());
+            transDoc.setAccountDocumentId(accountCollection.getId());
         });
         return transactionList;
     }

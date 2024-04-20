@@ -4,8 +4,8 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
-import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
@@ -24,20 +24,21 @@ public class AccountStatementDocumentService {
     AccountService accountService;
     Update updateDuplicateIndicatorDefination = Update.update("duplicate", Boolean.TRUE);
 
+
     public AccountStatementDocumentService(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
 
 
     public void saveAccountStatementDocuments(List<? extends AccountStatementDocument> accountStatementList,
-                                              AccountDocument accountDocument) {
-        String documentCollectionName = accountDocument.getAccountStatementCollectionName();
+                                              AccountCollection accountCollection) {
+        String documentCollectionName = accountCollection.getAccountStatementCollectionName();
         log.info("in saveAccountStatementDocuments");
-        switch (accountDocument.getInstitutionCategory()) {
+        switch (accountCollection.getInstitutionCategory()) {
             case BANKING -> {
-                accountDocument.getAccountStatementBalance();
+                accountCollection.getAccountStatementBalance();
                 accountStatementList.forEach(statement -> {
-                    Query query = accountDocument.findDuplicateRecordQuery(statement);
+                    Query query = accountCollection.findDuplicateRecordQuery(statement);
                     UpdateResult updateMultiResult = mongoTemplate.updateMulti(query, updateDuplicateIndicatorDefination,
                             AccountStatementDocument.class, documentCollectionName);
                     if (updateMultiResult.getMatchedCount() > 0) {
@@ -48,19 +49,19 @@ public class AccountStatementDocumentService {
                     }
                     mongoTemplate.save(statement, documentCollectionName);
                 });
-                accountDocument.updateNeededStatementOrReports(true, true);
+                accountCollection.updateNeededFlags(true, true, true);
                 log.info("All statements are recorded");
             }
             case LOAN, INVESTMENT, ASSETS -> {
                 accountStatementList.forEach(statement -> {
                     mongoTemplate.save(statement, documentCollectionName);
                 });
-                accountDocument.updateNeededStatementOrReports(true, true);
+                accountCollection.updateNeededFlags(true, true, false);
                 log.info("All statements are recorded");
             }
         }
 
-        accountService.setUpdateCalculateBalanceFlag(accountDocument);
+        accountService.setUpdateCalculateBalanceFlag(accountCollection);
         log.info("out saveAccountStatementDocuments");
     }
 
@@ -84,43 +85,43 @@ public class AccountStatementDocumentService {
     /**
      * With sorted only.
      *
-     * @param accountDocument
+     * @param accountCollection
      * @return
      */
     public List<? extends AccountStatementDocument> getAccountStatementDocuments(
-            AccountDocument accountDocument) {
+            AccountCollection accountCollection) {
         log.info("in getAccountStatementDocuments with sort");
-        Query query = accountDocument.statementSortQuery();
+        Query query = accountCollection.statementSortQuery();
         // PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, sort);
         List<AccountStatementDocument> accountStatementList = mongoTemplate.find(query,
                 AccountStatementDocument.class,
-                accountDocument.getAccountStatementCollectionName());
+                accountCollection.getAccountStatementCollectionName());
         log.info("out getAccountStatementDocuments with sort");
         return accountStatementList;
     }
 
 
-    public void deleteAccountStatementDocument(AccountDocument accountDocument, String statementId) {
+    public void deleteAccountStatementDocument(AccountCollection accountCollection, String statementId) {
         log.info("in deleteAccountStatementDocument");
 
         AccountStatementDocument statementDocument = mongoTemplate.findOne(FinanceDataHelper.findById(statementId),
-                AccountStatementDocument.class, accountDocument.getAccountStatementCollectionName());
+                AccountStatementDocument.class, accountCollection.getAccountStatementCollectionName());
 
         DeleteResult deleteResult = mongoTemplate.remove(FinanceDataHelper.findById(statementId), AccountStatementDocument.class,
-                accountDocument.getAccountStatementCollectionName());
+                accountCollection.getAccountStatementCollectionName());
 
-        Query query = accountDocument.findDuplicateRecordQuery(statementDocument);
+        Query query = accountCollection.findDuplicateRecordQuery(statementDocument);
         List<AccountStatementDocument> list = mongoTemplate.find(query, AccountStatementDocument.class,
-                accountDocument.getAccountStatementCollectionName());
+                accountCollection.getAccountStatementCollectionName());
 
         if (list.size() == 1) {
             Update update = Update.update("duplicate", Boolean.FALSE);
             UpdateResult updateResult = mongoTemplate.updateFirst(FinanceDataHelper.findById(list.get(0).getId()), update,
                     AccountStatementDocument.class,
-                    accountDocument.getAccountStatementCollectionName());
+                    accountCollection.getAccountStatementCollectionName());
         }
-        accountDocument.updateNeededStatementOrReports(true, true);
-        accountService.setUpdateCalculateBalanceFlag(accountDocument);
+        accountCollection.updateNeededFlags(true, true, true);
+        accountService.setUpdateCalculateBalanceFlag(accountCollection);
         log.info("out deleteAccountStatementDocument");
     }
 

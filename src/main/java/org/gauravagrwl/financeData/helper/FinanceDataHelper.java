@@ -16,8 +16,8 @@ public class FinanceDataHelper {
         return StringUtils.join(elements, UNDER_SCORE).concat("_statement_Collection");
     }
 
-    public static String getLedgerCollectionName(String... elements) {
-        return StringUtils.join(elements, UNDER_SCORE).concat("_ledgerDocument");
+    public static String getReportCollectionName(String... elements) {
+        return StringUtils.join(elements, UNDER_SCORE).concat("_report_Collection");
     }
 
     public static Query findById(String id) {

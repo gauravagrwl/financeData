@@ -1,16 +1,13 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
+package org.gauravagrwl.financeData.model.profileAccount.accountCollection;
 
 import com.opencsv.bean.HeaderColumnNameMappingStrategyBuilder;
 import com.opencsv.bean.MappingStrategy;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.BankAccountStatementDocument;
-import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
-import org.gauravagrwl.financeData.model.reports.CashFlowReportDocument;
+import org.gauravagrwl.financeData.model.profileAccount.reportCollection.CashFlowHoldingDocument;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.BankAccountStatementDocument;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -30,23 +27,27 @@ import java.util.List;
  * CREDIT(InstitutionCategoryEnum.BANKING, "CRE", "105"),
  */
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Setter
-@Getter
+
 @Slf4j
-public class BankAccountDocument extends AccountDocument {
+public class BankAccountCollection extends AccountCollection {
 
     // Account Calculated Balance
+    @Getter
     private BigDecimal accountBalance = BigDecimal.ZERO;
 
     // Account holding type
+    @Getter
+    @Setter
     private String holdingType;
 
     // Account Code: Routing code or IIFC code.
+    @Getter
+    @Setter
     private String accountCode;
 
     // Code Type: Routing or IIFC
+    @Getter
+    @Setter
     private String accountCodeType;
 
     @Override
@@ -61,12 +62,12 @@ public class BankAccountDocument extends AccountDocument {
 
     @Override
     public BigDecimal getAccountStatementBalance() {
-        return getAccountBalance();
+        return accountBalance;
     }
 
     @Override
     public Update retrieveUpdateAccountDocumentQuery() {
-        return Update.update("accountBalance", this.getAccountBalance());
+        return Update.update("accountBalance", accountBalance);
     }
 
     @Override
@@ -88,27 +89,27 @@ public class BankAccountDocument extends AccountDocument {
     }
 
     @Override
-    public void updateNeededStatementOrReports(Boolean updateAccountStatement, Boolean updateAccountReport) {
-        this.setUpdateAccountStatement(updateAccountStatement);
-        this.setUpdateAccountReport(updateAccountReport);
+    public void updateNeededFlags(Boolean updateAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport) {
+        this.setUpdateAccountStatementNeeded(updateAccountStatement);
+        this.setUpdateAccountReportNeeded(updateAccountReport);
+        this.setUpdateCashFlowReportNeeded(updateCashFlowReport);
     }
 
     @Override
     public List<? extends AccountStatementDocument> calculateAndUpdateAccountStatements(List<? extends AccountStatementDocument> statementDocumentList) {
-        BigDecimal accountBalance = BigDecimal.ZERO;
         List<BankAccountStatementDocument> statementList = (List<BankAccountStatementDocument>) statementDocumentList;
+        accountBalance = BigDecimal.ZERO;
         for (BankAccountStatementDocument statement : statementList) {
             accountBalance = accountBalance.add(statement.getCredit())
                     .subtract(statement.getDebit());
             statement.setBalance(accountBalance);
         }
-        this.setAccountBalance(accountBalance);
         return statementList;
     }
 
     @Override
-    public List<? extends AccountReportDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
-        List<CashFlowReportDocument> cashFlowReportDocumentList = new ArrayList<>();
+    public List<CashFlowHoldingDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
+        List<CashFlowHoldingDocument> cashFlowReportDocumentList = new ArrayList<>();
         return cashFlowReportDocumentList;
     }
 
@@ -119,4 +120,18 @@ public class BankAccountDocument extends AccountDocument {
         query.with(sort);
         return query;
     }
+
+    @Override
+    public void resetFields() {
+
+        this.setUpdateAccountStatementNeeded(Boolean.FALSE);
+        this.setUpdateAccountReportNeeded(Boolean.FALSE);
+        this.setUpdateCashFlowReportNeeded(Boolean.FALSE);
+        this.setHardStopDate(null);
+        this.setIsActive(Boolean.TRUE);
+        this.setBalanceCalculated(Boolean.FALSE);
+
+        accountBalance = BigDecimal.ZERO;
+    }
+
 }

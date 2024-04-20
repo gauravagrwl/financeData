@@ -1,4 +1,4 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountStatement;
+package org.gauravagrwl.financeData.model.profileAccount.statementCollection;
 
 import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvBindByNames;
@@ -28,13 +28,13 @@ public class BankAccountStatementDocument extends AccountStatementDocument {
 
     @CsvCustomBindByNames({
             @CsvCustomBindByName(column = "Posting Date", converter = CsvMDYDateStringToDateConverter.class, profiles = {
-                    "Chase_SAV", "CHK"}),})
+                    "Chase_SAV", "Chase_CHK"}),})
     private LocalDate transactionDate; // Date Of Transactions private LocalDate postingDate; // Date Of Posting
 
-    @CsvBindByNames({@CsvBindByName, @CsvBindByName(column = "Description", profiles = {"Chase_SAV", "CHK"}),})
+    @CsvBindByNames({@CsvBindByName, @CsvBindByName(column = "Description", profiles = {"Chase_SAV", "Chase_CHK"}),})
     private String descriptions; // Descriptions
 
-    @CsvBindByNames({@CsvBindByName, @CsvBindByName(column = "Details", profiles = {"Chase_SAV", "CHK"}),})
+    @CsvBindByNames({@CsvBindByName, @CsvBindByName(column = "Details", profiles = {"Chase_SAV", "Chase_CHK"}),})
     private String type; // If Dr., Cr.
 
     private BigDecimal debit = BigDecimal.ZERO; // Amount
@@ -43,7 +43,7 @@ public class BankAccountStatementDocument extends AccountStatementDocument {
 
     @CsvCustomBindByNames({
             @CsvCustomBindByName(column = "Amount", converter = CsvAmountStringToBigDecimalConverter.class, profiles = {
-                    "Chase_SAV", "CHK"}),})
+                    "Chase_SAV", "Chase_CHK"}),})
     @Transient
     private BigDecimal transient_amount = BigDecimal.ZERO;
 
@@ -56,6 +56,11 @@ public class BankAccountStatementDocument extends AccountStatementDocument {
     public static Comparator<BankAccountStatementDocument> sortBankStatment = Comparator
             .comparing(BankAccountStatementDocument::getTransactionDate)
             .thenComparing(BankAccountStatementDocument::getType);
+
+    @Override
+    public String findKeyName() {
+        return null;
+    }
 
 
     // public static Comparator<BankAccountStatementDocument>

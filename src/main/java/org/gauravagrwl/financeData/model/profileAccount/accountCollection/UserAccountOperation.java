@@ -1,8 +1,8 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
+package org.gauravagrwl.financeData.model.profileAccount.accountCollection;
 
 import com.opencsv.bean.MappingStrategy;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
-import org.gauravagrwl.financeData.model.reports.AccountReportDocument;
+import org.gauravagrwl.financeData.model.profileAccount.reportCollection.ReportCollection;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -24,11 +24,13 @@ public interface UserAccountOperation {
     BigDecimal getAccountStatementBalance();
 
 
-    void updateNeededStatementOrReports(Boolean updateAccountStatement, Boolean updateAccountReport);
+    void updateNeededFlags(Boolean updateAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport);
 
     List<? extends AccountStatementDocument> calculateAndUpdateAccountStatements(List<? extends AccountStatementDocument> statementDocumentList);
 
-    List<? extends AccountReportDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList);
+    List<? extends ReportCollection> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList);
 
     Query statementSortQuery();
+
+    void resetFields();
 }

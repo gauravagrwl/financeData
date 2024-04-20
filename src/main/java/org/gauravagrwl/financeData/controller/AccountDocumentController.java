@@ -1,8 +1,8 @@
 package org.gauravagrwl.financeData.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.gauravagrwl.financeData.model.profileAccount.accountDocument.AccountDocument;
-import org.gauravagrwl.financeData.model.profileAccount.accountStatement.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
+import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
 import org.gauravagrwl.financeData.service.AccountService;
 import org.gauravagrwl.financeData.service.AccountStatementDocumentService;
 import org.gauravagrwl.financeData.service.FinanceDataCommonService;
@@ -31,9 +31,9 @@ public class AccountDocumentController {
     ResponseEntity<?> getAccountStatement(
             @RequestParam(name = "userName", required = true) String userName,
             @RequestParam(name = "accountId", required = true) String accountId) {
-        AccountDocument accountDocument = accountService.getAccountDocument(accountId, userName);
+        AccountCollection accountCollection = accountService.getAccountDocument(accountId, userName);
         List<? extends AccountStatementDocument> accountStatementDocuments = accountDocumentService
-                .getAccountStatementDocuments(accountDocument);
+                .getAccountStatementDocuments(accountCollection);
         return ResponseEntity.ok(accountStatementDocuments);
     }
 
@@ -42,10 +42,10 @@ public class AccountDocumentController {
             @RequestParam(name = "userName", required = true) String userName,
             @RequestParam(name = "accountId", required = true) String accountId,
             @RequestParam(name = "transactionId", required = true) String statementId) {
-        AccountDocument accountDocument = accountService.getAccountDocument(accountId, userName);
-        accountDocumentService.deleteAccountStatementDocument(accountDocument,
+        AccountCollection accountCollection = accountService.getAccountDocument(accountId, userName);
+        accountDocumentService.deleteAccountStatementDocument(accountCollection,
                 statementId);
-        financeDataSyncService.calculateUpdateAccountStatement(accountDocument);
+        financeDataSyncService.calculateUpdateAccountStatement(accountCollection);
         return ResponseEntity.ok("Document is not removed.");
 
     }

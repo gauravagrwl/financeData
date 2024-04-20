@@ -1,4 +1,4 @@
-package org.gauravagrwl.financeData.model.profileAccount.accountDocument;
+package org.gauravagrwl.financeData.model.profileAccount.accountCollection;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.Currency;
 
 @NoArgsConstructor
@@ -27,13 +28,13 @@ import java.util.Currency;
 @Document(collection = "account_collections")
 @JsonTypeInfo(use = Id.NAME, include = As.EXISTING_PROPERTY, property = "institutionCategory", defaultImpl = InstitutionCategoryEnum.class, visible = true)
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = BankAccountDocument.class, name = "BankAccount"),
-        @JsonSubTypes.Type(value = InvestmentAccountDocument.class, name = "InvestmentAccount"),
-        @JsonSubTypes.Type(value = LoanAccountDocument.class, name = "LoanAccount"),
-        @JsonSubTypes.Type(value = AssetsAccountDocument.class, name = "AssetsAccount"),
+        @JsonSubTypes.Type(value = BankAccountCollection.class, name = "BankAccount"),
+        @JsonSubTypes.Type(value = InvestmentAccountCollection.class, name = "InvestmentAccount"),
+        @JsonSubTypes.Type(value = LoanAccountCollection.class, name = "LoanAccount"),
+        @JsonSubTypes.Type(value = AssetsAccountCollection.class, name = "AssetsAccount"),
 })
 @Component
-public abstract class AccountDocument implements UserAccountOperation {
+public abstract class AccountCollection implements UserAccountOperation {
 
     @MongoId
     private String id;
@@ -58,12 +59,29 @@ public abstract class AccountDocument implements UserAccountOperation {
     // @NotBlank(message = "Account Type is required.")
     private AccountTypeEnum accountType;
 
+
+    //Display Transaction for that account.
+    //Depends on indicator: updateAccountStatement if True
+    // Applicable only for Account type Banking
+    private Boolean updateAccountStatementNeeded = Boolean.FALSE;
     private String accountStatementCollectionName;
 
+
+    //Other collection to store the date:
+    //Depends on indicator: updateAccountReport if True
+    //EX: For assest -
+    // For Investment - Holdings
+    private Boolean updateAccountReportNeeded = Boolean.FALSE;
     private String accountReportCollectionName;
+
+    private Boolean updateCashFlowReportNeeded = Boolean.FALSE;
+
 
     // User profile who holds the account
     private String profileDocumentId;
+
+    // Hard stop date no processing of any transaction after this date.
+    private LocalDate hardStopDate;
 
     // Is this account still Active.
     private Boolean isActive = Boolean.TRUE;
@@ -77,9 +95,6 @@ public abstract class AccountDocument implements UserAccountOperation {
 
     //Needed for data to upload. Name_accounttype
     private String csvProfile;
-
-    private Boolean updateAccountStatement = Boolean.FALSE;
-    private Boolean updateAccountReport = Boolean.FALSE;
 
 
 }

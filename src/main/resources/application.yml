@@ -4,7 +4,7 @@
 logging:
   level:
     root: INFO
-    # org.mongodb.driver.protocol.command: DEBUG
+    org.mongodb.driver.protocol.command: INFO
 
 
 spring:
@@ -12,7 +12,7 @@ spring:
     mongodb:
       auto-index-creation: true
       uri: mongodb://localhost:27017
-      database: testdb
+      database: db_test
   autoconfigure:
     exclude: 'org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration'
 

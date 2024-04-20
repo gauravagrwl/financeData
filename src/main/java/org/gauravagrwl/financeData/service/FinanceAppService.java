@@ -1,12 +1,12 @@
 package org.gauravagrwl.financeData.service;
 
-import java.util.Set;
-
+import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.exception.FinanceDataException;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -19,15 +19,15 @@ public class FinanceAppService {
     }
 
     /**
-     * 
+     *
      */
     public void dropAllCollections() {
-        template.getCollectionNames().forEach(col -> template.dropCollection(col));
+        template.getCollectionNames().forEach(col ->
+                template.remove(new Query(), col));
         log.warn("All collection is dropped.");
     }
 
     /**
-     * 
      * @param collectionName
      */
     public void dropCollection(String collectionName) {
@@ -41,7 +41,6 @@ public class FinanceAppService {
     }
 
     /**
-     * 
      * @return
      */
     public Set<String> getAllCollections() {
