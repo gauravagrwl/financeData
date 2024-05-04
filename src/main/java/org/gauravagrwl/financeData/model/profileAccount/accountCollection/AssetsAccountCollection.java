@@ -5,8 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.gauravagrwl.financeData.model.profileAccount.reportCollection.ReportCollection;
-import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
+import org.gauravagrwl.financeData.model.statementModel.StatementModel;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -37,32 +37,32 @@ public class AssetsAccountCollection extends AccountCollection {
 
 
     @Override
-    public List<? extends AccountStatementDocument> calculateAndUpdateAccountStatements(List<? extends AccountStatementDocument> statementDocumentList) {
+    public void calculateAndUpdateAccountStatements(List<StatementModel> statementModelList) {
+        
+    }
+
+//    @Override
+//    public List<? extends ReportCollection> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
+//        return null;
+//    }
+
+    @Override
+    public MappingStrategy<? extends AccountStatementTransaction> getHeaderColumnNameModelMappingStrategy() {
         return null;
     }
 
     @Override
-    public List<? extends ReportCollection> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
+    public Update updateAccountBalanceDefination() {
         return null;
     }
 
     @Override
-    public MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(String mappingProfile) {
+    public Update updateAccountTranBalanceDefination(StatementModel statementModel) {
         return null;
     }
 
     @Override
-    public Update retrieveUpdateAccountDocumentQuery() {
-        return null;
-    }
-
-    @Override
-    public Update getUpdateAccountStatementQuery(AccountStatementDocument accountStatementDocument) {
-        return null;
-    }
-
-    @Override
-    public Query findDuplicateRecordQuery(AccountStatementDocument statementDocument) {
+    public Query findDuplicateRecordQuery(AccountStatementTransaction statementModel) {
         return null;
     }
 
@@ -72,8 +72,8 @@ public class AssetsAccountCollection extends AccountCollection {
     }
 
     @Override
-    public void updateNeededFlags(Boolean updateAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport) {
-        this.setUpdateAccountStatementNeeded(updateAccountStatement);
+    public void updateNeededFlags(Boolean updateAppAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport) {
+        this.setUpdateAccountAppStatementNeeded(updateAppAccountStatement);
         this.setUpdateAccountReportNeeded(updateAccountReport);
         this.setUpdateCashFlowReportNeeded(updateCashFlowReport);
     }

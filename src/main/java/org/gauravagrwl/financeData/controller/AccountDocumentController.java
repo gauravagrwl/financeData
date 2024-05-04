@@ -1,8 +1,8 @@
 package org.gauravagrwl.financeData.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
 import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
-import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
 import org.gauravagrwl.financeData.service.AccountService;
 import org.gauravagrwl.financeData.service.AccountStatementDocumentService;
 import org.gauravagrwl.financeData.service.FinanceDataCommonService;
@@ -32,8 +32,8 @@ public class AccountDocumentController {
             @RequestParam(name = "userName", required = true) String userName,
             @RequestParam(name = "accountId", required = true) String accountId) {
         AccountCollection accountCollection = accountService.getAccountDocument(accountId, userName);
-        List<? extends AccountStatementDocument> accountStatementDocuments = accountDocumentService
-                .getAccountStatementDocuments(accountCollection);
+        List<AccountStatementTransaction> accountStatementDocuments = accountDocumentService
+                .getAccountTransactionStatementDocuments(accountCollection);
         return ResponseEntity.ok(accountStatementDocuments);
     }
 

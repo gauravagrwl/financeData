@@ -36,12 +36,17 @@ public class AccountService {
         String profileId = profileService.getUserProfileDocument(userName).getId();
         accountCollection.setProfileDocumentId(profileId);
         String profileName = StringUtils.join(accountCollection.getInstitutionName(), "_", accountCollection.getAccountType().getAccountTypeName());
-        accountCollection.setCsvProfile(profileName);
-        String accountDisplayNumber = FinanceDataHelper.getAccountDisplayNumber(accountCollection.getAccountNumber());
+        accountCollection.setProfileType(profileName);
+        String accountDispalyName = FinanceDataHelper.getAccountDisplayName(userName, accountCollection.getProfileType(), accountCollection.getAccountNumber())
+        accountCollection.setAccountDisplayName(accountDispalyName);
+
         accountCollection.setAccountStatementCollectionName(
-                FinanceDataHelper.getStatementCollectionName(accountDisplayNumber));
+                FinanceDataHelper.getStatementCollectionName(accountDispalyName));
+        accountCollection.setAccountTransactionCollectionName(
+                FinanceDataHelper.getAccountTransactionCollectionName(accountDispalyName));
         accountCollection.setAccountReportCollectionName(
-                FinanceDataHelper.getReportCollectionName(accountDisplayNumber));
+                FinanceDataHelper.getReportCollectionName(accountDispalyName));
+
         AccountCollection save = accountDocumentRepository.save(accountCollection);
 
         return save.getId();
@@ -94,7 +99,7 @@ public class AccountService {
     }
 
     public void setUpdateCalculateBalanceFlag(AccountCollection accountCollection) {
-        accountDocumentRepository.findAndUpdateNeededFlagById(accountCollection.getId(), accountCollection.getUpdateAccountStatementNeeded(),
+        accountDocumentRepository.findAndUpdateNeededFlagById(accountCollection.getId(), accountCollection.getUpdateAccountAppStatementNeeded(),
                 accountCollection.getUpdateAccountReportNeeded(), accountCollection.getUpdateCashFlowReportNeeded());
 
     }

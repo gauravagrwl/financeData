@@ -23,7 +23,7 @@ public class CsvAmountStringToBigDecimalConverter extends AbstractBeanField<Stri
             return BigDecimal.ZERO;
         } else {
             BigDecimal bigDecimal = new BigDecimal(value);
-            return (isNegative) ? BigDecimal.ZERO.subtract(bigDecimal) : bigDecimal;
+            return (isNegative) ? (BigDecimal.ZERO.subtract(bigDecimal)) : bigDecimal;
         }
     }
 }

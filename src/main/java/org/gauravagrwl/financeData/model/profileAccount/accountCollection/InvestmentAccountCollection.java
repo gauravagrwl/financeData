@@ -7,25 +7,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.gauravagrwl.financeData.helper.AccountTypeEnum;
-import org.gauravagrwl.financeData.model.profileAccount.reportCollection.CryptoHoldingCollection;
-import org.gauravagrwl.financeData.model.profileAccount.reportCollection.HoldingTransactions;
-import org.gauravagrwl.financeData.model.profileAccount.reportCollection.ReportCollection;
-import org.gauravagrwl.financeData.model.profileAccount.reportCollection.StockHoldingCollection;
-import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
-import org.gauravagrwl.financeData.model.profileAccount.statementCollection.InvestmentCryptoAccountStatement;
-import org.gauravagrwl.financeData.model.profileAccount.statementCollection.InvestmentStockAccountStatement;
+import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
+import org.gauravagrwl.financeData.model.accountTransStatement.investment.cryptoInvestment.CoinbaseAccountStatementTransaction;
+import org.gauravagrwl.financeData.model.accountTransStatement.investment.cryptoInvestment.CryptoAppAccountStatementTransaction;
+import org.gauravagrwl.financeData.model.accountTransStatement.investment.stockInvestment.RobinhoodStockAccountStatementTransaction;
+import org.gauravagrwl.financeData.model.statementModel.StatementModel;
+import org.gauravagrwl.financeData.model.statementModel.StockInvestmentAccountStatementModel;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * This class supports below Institution Sub Category:
@@ -53,41 +47,89 @@ public class InvestmentAccountCollection extends AccountCollection {
     private Boolean isAutoTradable = Boolean.FALSE;
 
     @Override
-    public MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(String mappingProfile) {
-        if (StringUtils.containsIgnoreCase(mappingProfile, "Stock")) {
-            MappingStrategy<InvestmentStockAccountStatement> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<InvestmentStockAccountStatement>()
-                    .withForceCorrectRecordLength(true).build();
-            headerColumnNameMappingStrategy.setProfile(mappingProfile);
-            headerColumnNameMappingStrategy.setType(InvestmentStockAccountStatement.class);
-            return headerColumnNameMappingStrategy;
-        } else {
-            MappingStrategy<InvestmentCryptoAccountStatement> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<InvestmentCryptoAccountStatement>()
-                    .withForceCorrectRecordLength(true).build();
-            headerColumnNameMappingStrategy.setProfile(mappingProfile);
-            headerColumnNameMappingStrategy.setType(InvestmentCryptoAccountStatement.class);
-            return headerColumnNameMappingStrategy;
+    public MappingStrategy<? extends AccountStatementTransaction> getHeaderColumnNameModelMappingStrategy() {
+        switch (getProfileType()) {
+            case "Robinhood_STOCK" -> {
+                MappingStrategy<RobinhoodStockAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<RobinhoodStockAccountStatementTransaction>()
+                        .withForceCorrectRecordLength(true).build();
+                headerColumnNameMappingStrategy.setProfile(getProfileType());
+                headerColumnNameMappingStrategy.setType(RobinhoodStockAccountStatementTransaction.class);
+                return headerColumnNameMappingStrategy;
+            }
+            case "CryptoApp_CRYPTO" -> {
+                MappingStrategy<CryptoAppAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<CryptoAppAccountStatementTransaction>()
+                        .withForceCorrectRecordLength(true).build();
+                headerColumnNameMappingStrategy.setProfile(getProfileType());
+                headerColumnNameMappingStrategy.setType(CryptoAppAccountStatementTransaction.class);
+                return headerColumnNameMappingStrategy;
+            }
+            case "Coinbase_CRYPTO" -> {
+                MappingStrategy<CoinbaseAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<CoinbaseAccountStatementTransaction>()
+                        .withForceCorrectRecordLength(true).build();
+                headerColumnNameMappingStrategy.setProfile(getProfileType());
+                headerColumnNameMappingStrategy.setType(CoinbaseAccountStatementTransaction.class);
+                return headerColumnNameMappingStrategy;
+            }
+
+            default -> {
+                return null;
+            }
         }
     }
 
     @Override
-    public Update retrieveUpdateAccountDocumentQuery() {
+    public Update updateAccountBalanceDefination() {
         return new Update().set("amountInvestment", this.getAmountInvestment()).set("cashInvestment", this.getCashInvestment()).set("cashReturn", this.getCashReturn());
     }
 
     @Override
-    public Update getUpdateAccountStatementQuery(AccountStatementDocument accountStatementDocument) {
-        if (AccountTypeEnum.STOCK.compareTo(this.getAccountType()) == 0) {
-            InvestmentStockAccountStatement statement = (InvestmentStockAccountStatement) accountStatementDocument;
-            return Update.update("fee", statement.getFee());
-        } else {
-            return null;
-        }
+    public Update updateAccountTranBalanceDefination(StatementModel statementModel) {
+        return null;
     }
 
     @Override
-    public Query findDuplicateRecordQuery(AccountStatementDocument statementDocument) {
-        return null;
+    public Query findDuplicateRecordQuery(AccountStatementTransaction statementModel) {
+        switch (getProfileType()) {
+            case "Robinhood_STOCK" -> {
+                RobinhoodStockAccountStatementTransaction statement = (RobinhoodStockAccountStatementTransaction) statementModel;
+                return new Query(
+                        Criteria.where("s_activity_Date").is(statement.getS_activity_Date())
+                                .and("s_process_Date").is(statement.getS_process_Date())
+                                .and("s_settle_Date").is(statement.getS_settle_Date())
+                                .and("s_instrument").is(statement.getS_instrument())
+                                .and("s_description").is(statement.getS_description())
+                                .and("s_trans_Code").is(statement.getS_trans_Code())
+                                .and("s_quantity").is(statement.getS_quantity())
+                                .and("s_price").is(statement.getS_price())
+                                .and("s_amount").is(statement.getS_amount().abs()));
+            }
+            case "CryptoApp_CRYPTO" -> {
+                CryptoAppAccountStatementTransaction statement = (CryptoAppAccountStatementTransaction) statementModel;
+                return new Query(
+                        Criteria.where("timestamp").is(statement.getTimestamp())
+                                .and("transaction_description").is(statement.getTransaction_description())
+                                .and("crypto_currency").is(statement.getCrypto_currency())
+                                .and("amount").is(statement.getAmount())
+                                .and("to_Currency").is(statement.getTo_Currency())
+                                .and("to_Amount").is(statement.getTo_Amount())
+                                .and("native_Currency").is(statement.getNative_Amount())
+                                .and("native_Amount").is(statement.getNative_Amount())
+                                .and("native_Amount_USD").is(statement.getNative_Amount_USD())
+                                .and("transaction_kind").is(statement.getTransaction_kind())
+                                .and("transaction_hash").is(statement.getTransaction_hash()));
+            }
+            case "Coinbase_CRYPTO" -> {
+                CoinbaseAccountStatementTransaction statement = (CoinbaseAccountStatementTransaction) statementModel;
+                return new Query(
+                        Criteria.where("s_coinbase_ID").is(statement.getS_coinbase_ID())
+                );
+            }
+            default -> {
+                return null;
+            }
+        }
     }
+
 
     @Override
     public BigDecimal getAccountStatementBalance() {
@@ -95,185 +137,86 @@ public class InvestmentAccountCollection extends AccountCollection {
     }
 
     @Override
-    public List<? extends AccountStatementDocument> calculateAndUpdateAccountStatements(List<? extends AccountStatementDocument> statementDocumentList) {
-        if (AccountTypeEnum.STOCK.compareTo(this.getAccountType()) == 0) {
-            List<InvestmentStockAccountStatement> statementList = (List<InvestmentStockAccountStatement>) statementDocumentList;
-            updateStockStatement(statementList);
-            //Stock processing
-            //TODO: Update statement
-            //TODO: Update Total amount invested
-            //TODO: Update Total amount return
-            return statementList;
-        } else {
-            List<InvestmentCryptoAccountStatement> statementList = (List<InvestmentCryptoAccountStatement>) statementDocumentList;
-            //TODO: Update statement
-            //TODO: Update Total amount invested
-            //TODO: Update Total amount return
-            return statementList;
-        }
-
-
+    public void calculateAndUpdateAccountStatements(List<StatementModel> statementModelList) {
+        updateStockStatement(statementModelList);
+        setUpdateAccountStatement(Boolean.TRUE);
+//        switch (getProfileType()) {
+//            case "Robinhood_STOCK" -> {
+//                updateStockStatement(statementModelList);
+//                setUpdateAccountStatement(Boolean.TRUE);
+//
+//            }
+//        }
     }
 
     @Override
-    public List<? extends ReportCollection> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
-        if (AccountTypeEnum.STOCK.compareTo(this.getAccountType()) == 0) {
-            List<InvestmentStockAccountStatement> statementList = (List<InvestmentStockAccountStatement>) accountStatementList;
-
-            Map<String, List<InvestmentStockAccountStatement>> instrument_Trans =
-                    statementList.stream().collect(Collectors.groupingBy(InvestmentStockAccountStatement::getStock_instrument));
-            //Stock processing
-            //TODO: Update holding status
-            List<StockHoldingCollection> stockHoldingCollectionList = new ArrayList<>();
-            instrument_Trans.remove("");
-            Set<String> instruments = instrument_Trans.keySet();
-            for (String s : instruments) {
-                StockHoldingCollection holdingDocument = new StockHoldingCollection();
-                holdingDocument.setAccountDocumentId(this.getId());
-                holdingDocument.setInstrument(s);
-                holdingDocument.getHoldingTransactionList().addAll(createHoldingTransaction(instrument_Trans.get(s)));
-//                holdingDocument.calculateHoldingReport();
-                stockHoldingCollectionList.add(holdingDocument);
-            }
-            //Steps:
-            // Insert symbol and transaction in TransactionDocument
-            return stockHoldingCollectionList;
-        } else {
-            // crypto processing
-            //TODO: Update holding status
-            List<CryptoHoldingCollection> cryptoHoldingCollectionList = new ArrayList<>();
-            return cryptoHoldingCollectionList;
-        }
-    }
-
-    private List<HoldingTransactions> createHoldingTransaction(List<InvestmentStockAccountStatement> investmentStockAccountStatements) {
-        List<HoldingTransactions> holdingTrans = new ArrayList<>();
-        for (InvestmentStockAccountStatement s : investmentStockAccountStatements) {
-            HoldingTransactions ht = new HoldingTransactions();
-            ht.setAccountStatementId(s.getId());
-            ht.setSettleDate(s.getSettleDate());
-            ht.setInstrument(s.getStock_instrument());
-            ht.setTransCode(s.getTransCode());
-            ht.setQuantity(s.getQuantity());
-            ht.setRate(s.getRate());
-            ht.setAmount(s.getAmount());
-            ht.setDescriptions(s.getDescription());
-            holdingTrans.add(ht);
-        }
-        return holdingTrans;
-    }
-
-
-    @Override
-    public void updateNeededFlags(Boolean updateAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport) {
-        this.setUpdateAccountStatementNeeded(updateAccountStatement);
+    public void updateNeededFlags(Boolean updateAppAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport) {
+        this.setUpdateAccountAppStatementNeeded(updateAppAccountStatement);
         this.setUpdateAccountReportNeeded(updateAccountReport);
         this.setUpdateCashFlowReportNeeded(updateCashFlowReport);
     }
 
-    public void updateStockStatement(List<InvestmentStockAccountStatement> statementList) {
-        this.amountInvestment = BigDecimal.ZERO;
-        this.cashInvestment = BigDecimal.ZERO;
-        for (InvestmentStockAccountStatement trans_s : statementList) {
-            switch (trans_s.getTransCode()) {
-                case "Buy" -> {
-                    log.info("Buy");
-                    trans_s.setFee((trans_s.getQuantity().multiply(trans_s.getRate())).subtract(trans_s.getAmount().abs()));
-                    this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
-                    log.info("desc: " + trans_s.getDescription() + " qty: " + trans_s.getQuantity() + " amount: " + trans_s.getAmount() + " fee: " + trans_s.getFee());
+    /**
+     * Buy: instrument(assets / coin) added under any transaction code.
+     * Sell: instrument(assets / coin) removed or sold under any transaction code.
+     * O_*: Option transactions
+     * Transfer: instrument(assets / coin) is transfer
+     * Earn: Div, REC, SLIP, MISC
+     * Charge:DTAX,
+     */
+    private void updateStockStatement(List<StatementModel> statementList) {
+        for (StatementModel trans_s : statementList) {
+            StockInvestmentAccountStatementModel s = (StockInvestmentAccountStatementModel) trans_s;
+            log.info(s.toString());
+            switch (s.getC_trans_code()) {
+                case Buy, O_BTC, Earn -> {
+                    log.info(s.toString());
+                    if (s.getC_amount().compareTo(BigDecimal.ZERO) != 0)
+                        amountInvestment = amountInvestment.add(s.getC_amount());
                 }
-                case "Sell" -> {
-                    log.info("Sell");
-                    trans_s.setFee((trans_s.getQuantity().multiply(trans_s.getRate())).subtract(trans_s.getAmount().abs()));
-                    this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
-                    log.info("desc: " + trans_s.getDescription() + " qty: " + trans_s.getQuantity() + " amount: " + trans_s.getAmount() + " fee: " + trans_s.getFee());
+                case Sell, O_STO, Charge -> {
+                    log.info(s.toString());
+                    if (s.getC_amount().compareTo(BigDecimal.ZERO) != 0)
+                        amountInvestment = amountInvestment.subtract(s.getC_amount());
                 }
-                case "CDIV" -> {
-                    log.info("Dividend");
-                    this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
+                case Deposit -> {
+                    log.info(s.toString());
+                    cashInvestment = cashInvestment.add(s.getC_amount());
                 }
-                case "REC" -> {
-                    log.info("Recived");
-                    //Do Nothing
+                case O_EXP, O_ASGN -> {
+                    log.info(s.toString());
                 }
-                case "MISC" -> {
-                    log.info("Price Corrections OR OCA");
-                    this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
+                case Cancel -> {
+                    log.info(s.toString());
+                    cashInvestment = cashInvestment.subtract(s.getC_amount());
                 }
-                case "OCA" -> {
-                    log.info("OCA");
-                    //Do Nothing
-                }
-                case "SLIP" -> {
-                    log.info("Stock Lending");
-                    this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
-                }
-                case "BTC" -> {
-                    log.info("For Options: BTC");
-                    trans_s.setFee((trans_s.getAmount().abs()).subtract((trans_s.getQuantity().multiply(trans_s.getRate())).multiply(BigDecimal.valueOf(100))));
-                    // reverse the condition
-                    this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
-                    log.info("desc: " + trans_s.getDescription() + " qty: " + trans_s.getQuantity() + " amount: " + trans_s.getAmount() + " fee: " + trans_s.getFee());
-                }
-                case "OASGN" -> {
-                    log.info("OASGN: For Options");
-                    //Do Nothing
-                }
-                case "STO" -> {
-                    log.info("STO: For Options");
-                    trans_s.setFee(((trans_s.getQuantity().multiply(trans_s.getRate())).multiply(BigDecimal.valueOf(100))).subtract(trans_s.getAmount().abs()));
-                    this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
-                    log.info("desc: " + trans_s.getDescription() + " qty: " + trans_s.getQuantity() + " amount: " + trans_s.getAmount() + " fee: " + trans_s.getFee());
-                }
-                case "OEXP" -> {
-                    log.info("OEXP: For Options");
-                    //Do Nothing 38582 20105+17391
-                }
-                case "ACH" -> {
-                    log.info("ACH.");
-                    if (trans_s.getDescription().contains("Deposit")) {
-                        this.cashInvestment = this.cashInvestment.add(trans_s.getAmount());
-                        this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
-                    } else if (trans_s.getDescription().contains("Withdrawal")) {
-                        this.cashReturn = this.cashReturn.add(trans_s.getAmount().abs());
-                        this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
-                    } else if (trans_s.getDescription().contains("Cancel")) {
-                        this.cashInvestment = this.cashInvestment.subtract(trans_s.getAmount());
-                    }
-                }
-                case "DTAX" -> {
-                    log.info("Tax Withheld");
-                    this.amountInvestment = this.amountInvestment.add(trans_s.getAmount());
+                case Withdrawal -> {
+                    log.info(s.toString());
+                    cashReturn = cashReturn.add(s.getC_amount());
                 }
                 default -> {
-                    log.error("no Rule defined for : " + trans_s.getTransCode());
+                    log.warn("Transaction Code not set for transaction: " + s.toString());
                 }
             }
         }
-        this.amountInvestment = this.amountInvestment.add(this.cashInvestment).subtract(this.cashReturn);
-        log.info("Cash Investment: " + this.cashInvestment + " total investment: " + this.amountInvestment);
-//        return statementList;
+        log.info(toString());
     }
 
     @Override
     public Query statementSortQuery() {
-        if (AccountTypeEnum.STOCK.compareTo(this.getAccountType()) == 0) {
-            Sort sort = Sort.by(Sort.Direction.ASC, "settleDate").and(Sort.by(Sort.Direction.ASC, "transCode"));
-            Query query = new Query();
-            query.with(sort);
-            return query;
-
-        } else {
-            Sort sort = Sort.by(Sort.Direction.ASC, "transactionDate").and(Sort.by(Sort.Direction.ASC, "type"));
-            Query query = new Query();
-            query.with(sort);
-            return query;
+        Sort sort = null;
+        Query query = new Query();
+        switch (getProfileType()) {
+            case "Robinhood_STOCK" -> {
+                sort = Sort.by(Sort.Direction.ASC, "s_settle_Date").and(Sort.by(Sort.Direction.ASC, "s_trans_Code"));
+            }
         }
+        return (sort != null) ? query.with(sort) : query;
     }
 
     @Override
     public void resetFields() {
-        this.setUpdateAccountStatementNeeded(Boolean.FALSE);
+        this.setUpdateAccountAppStatementNeeded(Boolean.FALSE);
         this.setUpdateAccountReportNeeded(Boolean.FALSE);
         this.setUpdateCashFlowReportNeeded(Boolean.FALSE);
         this.setHardStopDate(null);
@@ -289,5 +232,16 @@ public class InvestmentAccountCollection extends AccountCollection {
         // Is this Account Auto Tradeable.
         isAutoTradable = Boolean.FALSE;
 
+    }
+
+    @Override
+    public String toString() {
+        return "InvestmentAccountCollection{" +
+                "amountInvestment=" + amountInvestment +
+                ", cashInvestment=" + cashInvestment +
+                ", amountReturn=" + amountReturn +
+                ", cashReturn=" + cashReturn +
+                ", isAutoTradable=" + isAutoTradable +
+                '}';
     }
 }

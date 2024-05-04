@@ -7,7 +7,7 @@ import org.gauravagrwl.financeData.model.audit.AuditMetadata;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-public abstract class ReportCollection {
+public abstract class ReportCollection implements ReportOperation {
 
     @MongoId
     @Getter

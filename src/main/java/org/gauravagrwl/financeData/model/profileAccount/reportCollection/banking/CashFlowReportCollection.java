@@ -1,10 +1,11 @@
-package org.gauravagrwl.financeData.model.profileAccount.reportCollection;
+package org.gauravagrwl.financeData.model.profileAccount.reportCollection.banking;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.gauravagrwl.financeData.model.profileAccount.reportCollection.ReportCollection;
 import org.springframework.data.mongodb.core.index.Indexed;
 
 import java.math.BigDecimal;
@@ -14,7 +15,7 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CashFlowHoldingDocument extends ReportCollection {
+public class CashFlowReportCollection extends ReportCollection {
 
     private LocalDate transactionDate; // Date Of Transactions
     @Indexed
@@ -25,10 +26,13 @@ public class CashFlowHoldingDocument extends ReportCollection {
     private BigDecimal cashOut;
     private Boolean reconciled;
 
-
     //statement id to handle other operations
     @NotBlank
     @Indexed(unique = true, background = true)
     private String accountStatementId;
 
+
+    public void calculateReport() {
+
+    }
 }

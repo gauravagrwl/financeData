@@ -1,7 +1,8 @@
-package org.gauravagrwl.financeData.model.profileAccount.reportCollection;
+package org.gauravagrwl.financeData.model.profileAccount.reportCollection.investment;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Setter;
+import org.gauravagrwl.financeData.model.profileAccount.reportCollection.ReportCollection;
 import org.springframework.data.mongodb.core.index.Indexed;
 
 public abstract class HoldingCollection extends ReportCollection implements HoldingOperations {

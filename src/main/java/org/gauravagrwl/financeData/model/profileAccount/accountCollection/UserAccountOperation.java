@@ -1,8 +1,8 @@
 package org.gauravagrwl.financeData.model.profileAccount.accountCollection;
 
 import com.opencsv.bean.MappingStrategy;
-import org.gauravagrwl.financeData.model.profileAccount.reportCollection.ReportCollection;
-import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
+import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
+import org.gauravagrwl.financeData.model.statementModel.StatementModel;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -13,24 +13,32 @@ public interface UserAccountOperation {
 
     // List of abstract method:
 
-    MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(String mappingProfile);
+    // Helps to find the duplicate Query -- IMP
+    Query findDuplicateRecordQuery(AccountStatementTransaction statementModel);
 
-    public Update retrieveUpdateAccountDocumentQuery();
+    Query statementSortQuery();
 
-    Update getUpdateAccountStatementQuery(AccountStatementDocument accountStatementDocument);
+    void updateNeededFlags(Boolean updateAppAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport);
 
-    Query findDuplicateRecordQuery(AccountStatementDocument statementDocument);
+    void calculateAndUpdateAccountStatements(List<StatementModel> statementModelList);
+
+    Update updateAccountTranBalanceDefination(StatementModel statementModel);
+
+    public Update updateAccountBalanceDefination();
+
+    MappingStrategy<? extends AccountStatementTransaction> getHeaderColumnNameModelMappingStrategy();
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
     BigDecimal getAccountStatementBalance();
 
 
-    void updateNeededFlags(Boolean updateAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport);
+//    List<? extends ReportCollection> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList);
 
-    List<? extends AccountStatementDocument> calculateAndUpdateAccountStatements(List<? extends AccountStatementDocument> statementDocumentList);
-
-    List<? extends ReportCollection> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList);
-
-    Query statementSortQuery();
 
     void resetFields();
+
+
 }

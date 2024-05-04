@@ -12,6 +12,7 @@ import lombok.Setter;
 import org.gauravagrwl.financeData.helper.AccountTypeEnum;
 import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
 import org.gauravagrwl.financeData.model.audit.AuditMetadata;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -63,9 +64,16 @@ public abstract class AccountCollection implements UserAccountOperation {
     //Display Transaction for that account.
     //Depends on indicator: updateAccountStatement if True
     // Applicable only for Account type Banking
-    private Boolean updateAccountStatementNeeded = Boolean.FALSE;
+
     private String accountStatementCollectionName;
 
+    private String accountTransactionCollectionName;
+
+    //Display Transaction for that account.
+    //Depends on indicator: updateAccountStatement if True
+    // Applicable only for Account type Banking
+//    private Boolean updateAccountAppStatementNeeded = Boolean.FALSE;
+    private Boolean updateAccountAppStatementNeeded = Boolean.FALSE;
 
     //Other collection to store the date:
     //Depends on indicator: updateAccountReport if True
@@ -94,7 +102,12 @@ public abstract class AccountCollection implements UserAccountOperation {
     private Integer version;
 
     //Needed for data to upload. Name_accounttype
-    private String csvProfile;
+    private String profileType;
+
+    @Transient
+    private Boolean updateAccountStatement = Boolean.FALSE;
+
+    private String accountDisplayName;
 
 
 }

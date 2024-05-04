@@ -5,16 +5,16 @@ import com.opencsv.bean.MappingStrategy;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.gauravagrwl.financeData.model.profileAccount.reportCollection.CashFlowHoldingDocument;
-import org.gauravagrwl.financeData.model.profileAccount.statementCollection.AccountStatementDocument;
-import org.gauravagrwl.financeData.model.profileAccount.statementCollection.BankAccountStatementDocument;
+import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
+import org.gauravagrwl.financeData.model.accountTransStatement.banking.ChaseBankingAccountStatementTransaction;
+import org.gauravagrwl.financeData.model.statementModel.BankAccountStatementModel;
+import org.gauravagrwl.financeData.model.statementModel.StatementModel;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -51,13 +51,19 @@ public class BankAccountCollection extends AccountCollection {
     private String accountCodeType;
 
     @Override
-    public MappingStrategy<? extends AccountStatementDocument> getHeaderColumnNameMappingStrategy(
-            String mappingProfile) {
-        MappingStrategy<BankAccountStatementDocument> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<BankAccountStatementDocument>()
-                .withForceCorrectRecordLength(true).build();
-        headerColumnNameMappingStrategy.setProfile(mappingProfile);
-        headerColumnNameMappingStrategy.setType(BankAccountStatementDocument.class);
-        return headerColumnNameMappingStrategy;
+    public MappingStrategy<? extends AccountStatementTransaction> getHeaderColumnNameModelMappingStrategy() {
+        switch (getProfileType()) {
+            case "Chase_SAV", "Chase_CHK" -> {
+                MappingStrategy<ChaseBankingAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<ChaseBankingAccountStatementTransaction>()
+                        .withForceCorrectRecordLength(true).build();
+                headerColumnNameMappingStrategy.setProfile(getProfileType());
+                headerColumnNameMappingStrategy.setType(ChaseBankingAccountStatementTransaction.class);
+                return headerColumnNameMappingStrategy;
+            }
+            default -> {
+                return null;
+            }
+        }
     }
 
     @Override
@@ -66,65 +72,70 @@ public class BankAccountCollection extends AccountCollection {
     }
 
     @Override
-    public Update retrieveUpdateAccountDocumentQuery() {
+    public Update updateAccountBalanceDefination() {
         return Update.update("accountBalance", accountBalance);
     }
 
     @Override
-    public Update getUpdateAccountStatementQuery(AccountStatementDocument accountStatementDocument) {
-        BankAccountStatementDocument statement = (BankAccountStatementDocument) accountStatementDocument;
-        return Update.update("balance", statement.getBalance());
+    public Update updateAccountTranBalanceDefination(StatementModel accountStatementModel) {
+        BankAccountStatementModel statementModel = (BankAccountStatementModel) accountStatementModel;
+        return Update.update("c_transactionBalance", statementModel.getC_transactionBalance());
     }
 
     @Override
-    public Query findDuplicateRecordQuery(AccountStatementDocument statementDocument) {
-        BankAccountStatementDocument statement = (BankAccountStatementDocument) statementDocument;
-        return new Query(
-                Criteria.where("transactionDate").is(statement.getTransactionDate()).and("descriptions")
-                        .is(statement.getDescriptions()).and("type").is(statement.getType())
-                        .and("debit")
-                        .is(statement.getDebit())
-                        .and("credit")
-                        .is(statement.getCredit()));
+    public Query findDuplicateRecordQuery(AccountStatementTransaction statementModel) {
+        switch (getProfileType()) {
+            case "Chase_SAV", "Chase_CHK" -> {
+                ChaseBankingAccountStatementTransaction statement = (ChaseBankingAccountStatementTransaction) statementModel;
+                return new Query(
+                        Criteria.where("s_posting_Date").is(statement.getS_posting_Date()).and("s_details")
+                                .is(statement.getS_details()).and("s_amount").is(statement.getS_amount())
+                                .and("s_balance").is(statement.getS_balance()));
+            }
+            default -> {
+                return null;
+            }
+        }
+
     }
 
     @Override
-    public void updateNeededFlags(Boolean updateAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport) {
-        this.setUpdateAccountStatementNeeded(updateAccountStatement);
+    public void updateNeededFlags(Boolean updateAppAccountStatement, Boolean updateAccountReport, Boolean updateCashFlowReport) {
+        this.setUpdateAccountAppStatementNeeded(updateAppAccountStatement);
         this.setUpdateAccountReportNeeded(updateAccountReport);
         this.setUpdateCashFlowReportNeeded(updateCashFlowReport);
     }
 
     @Override
-    public List<? extends AccountStatementDocument> calculateAndUpdateAccountStatements(List<? extends AccountStatementDocument> statementDocumentList) {
-        List<BankAccountStatementDocument> statementList = (List<BankAccountStatementDocument>) statementDocumentList;
-        accountBalance = BigDecimal.ZERO;
-        for (BankAccountStatementDocument statement : statementList) {
-            accountBalance = accountBalance.add(statement.getCredit())
-                    .subtract(statement.getDebit());
-            statement.setBalance(accountBalance);
+    public void calculateAndUpdateAccountStatements(List<StatementModel> statementModelList) {
+        for (StatementModel statementModel : statementModelList) {
+            BankAccountStatementModel statement = (BankAccountStatementModel) statementModel;
+            accountBalance = accountBalance.add(statement.getC_credit())
+                    .subtract(statement.getC_debit());
+            statement.setC_transactionBalance(accountBalance);
         }
-        return statementList;
+        setUpdateAccountStatement(Boolean.TRUE);
     }
 
-    @Override
-    public List<CashFlowHoldingDocument> calculateAndUpdateAccountReports(List<? extends AccountStatementDocument> accountStatementList) {
-        List<CashFlowHoldingDocument> cashFlowReportDocumentList = new ArrayList<>();
-        return cashFlowReportDocumentList;
-    }
 
     @Override
     public Query statementSortQuery() {
-        Sort sort = Sort.by(Sort.Direction.ASC, "transactionDate").and(Sort.by(Sort.Direction.ASC, "type"));
+        Sort sort = null;
         Query query = new Query();
-        query.with(sort);
-        return query;
+        switch (getProfileType()) {
+            case "Chase_SAV", "Chase_CHK" -> {
+                sort = Sort.by(Sort.Direction.ASC, "s_posting_Date").and(Sort.by(Sort.Direction.ASC, "c_type"));
+            }
+        }
+
+        return (sort != null) ? query.with(sort) : query;
+
     }
 
     @Override
     public void resetFields() {
 
-        this.setUpdateAccountStatementNeeded(Boolean.FALSE);
+        this.setUpdateAccountAppStatementNeeded(Boolean.FALSE);
         this.setUpdateAccountReportNeeded(Boolean.FALSE);
         this.setUpdateCashFlowReportNeeded(Boolean.FALSE);
         this.setHardStopDate(null);

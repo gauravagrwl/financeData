@@ -30,6 +30,7 @@ public class FinanceDataApplication {
     // TODO: Use UUID
     // TODO: Add hard stop no update once reconciled. do not allow duplicate record insert after that. Any update only after that date and recalculate / update from date date.
     //TODO: Current name is confusing need to rename- methods and attributes
+    //TODO: Handle delete operation properly. as it need to be propogated.
 
 
 }
