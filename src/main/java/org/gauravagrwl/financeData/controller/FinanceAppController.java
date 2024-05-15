@@ -1,19 +1,15 @@
 package org.gauravagrwl.financeData.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.gauravagrwl.financeData.helper.AccountTypeEnum;
-import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
+import lombok.extern.slf4j.Slf4j;
+import org.gauravagrwl.financeData.helper.enums.AccountTypeEnum;
+import org.gauravagrwl.financeData.helper.enums.Category_I;
+import org.gauravagrwl.financeData.helper.enums.InstitutionCategoryEnum;
 import org.gauravagrwl.financeData.service.FinanceAppService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.GetMapping;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/financeApp")
@@ -27,7 +23,6 @@ public class FinanceAppController {
     }
 
     /**
-     * 
      * @return
      */
 
@@ -39,7 +34,6 @@ public class FinanceAppController {
     }
 
     /**
-     * 
      * @param collectionName
      * @return
      */
@@ -51,7 +45,6 @@ public class FinanceAppController {
     }
 
     /**
-     * 
      * @return
      */
     @GetMapping(path = "/getCollections")
@@ -60,7 +53,6 @@ public class FinanceAppController {
     }
 
     /**
-     * 
      * @param userName
      * @param accountCategory
      * @return
@@ -77,8 +69,14 @@ public class FinanceAppController {
         return ResponseEntity.ok(accountTypeList);
     }
 
+    //For Category
+//    I -> Cash_out - DropDown
+//    II -> Inv_OUT - DropDown
+//    III -> Crypto - DropDown
+//    IV -> Free form Text
+//    V -> Amount
+
     /**
-     * 
      * @return
      */
     @GetMapping(value = "/getInstitutionCategory")
@@ -88,6 +86,15 @@ public class FinanceAppController {
             accountCatList.add(accountCat.getCategoryName().toUpperCase());
         }
         return ResponseEntity.ok(accountCatList);
+    }
+
+    @GetMapping(value = "/categoryI")
+    ResponseEntity<?> getCategoryI() {
+        List<String> catIlist = new ArrayList<>();
+        for (Category_I c : Category_I.values()) {
+            catIlist.add(c.getCategoryI());
+        }
+        return ResponseEntity.ok(catIlist);
     }
 
 }

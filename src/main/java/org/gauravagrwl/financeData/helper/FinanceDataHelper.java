@@ -26,11 +26,25 @@ public class FinanceDataHelper {
         return StringUtils.join(elements, UNDER_SCORE).concat("_report_Collection");
     }
 
+    public static String getAssetsCollectionName(String... elements) {
+        return StringUtils.join(elements, UNDER_SCORE).concat("_rental_Collection");
+    }
+
+    public static String getCashFlowCollectionName(String... elements) {
+        return StringUtils.join(elements, UNDER_SCORE).concat("_cashFlow_Collection");
+    }
+
+    public static String getHoldingCollectionName(String... elements) {
+        return StringUtils.join(elements, UNDER_SCORE).concat("_holding_Collection");
+    }
+
     public static Query findById(String id) {
         Query query = new Query(
                 Criteria.where("id").is(id));
         return query;
     }
+
+    public static Update updateDuplicateIndicatorDefination = Update.update("duplicate", Boolean.TRUE);
 
 
     public static Update updateReconcileIndicatorDefination = Update.update("reconciled", Boolean.TRUE);

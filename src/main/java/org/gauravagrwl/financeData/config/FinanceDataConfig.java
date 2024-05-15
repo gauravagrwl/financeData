@@ -66,8 +66,11 @@ public class FinanceDataConfig {
     @Bean
     public MongoCustomConversions mongoCustomConversions() {
         return new MongoCustomConversions(Arrays.asList(
+                new BigDecimalWriteConverter(),
+                new BigDecimalReadConverter(),
                 new ZonedDateTimeWriteConverter(),
                 new ZonedDateTimeReadConverter()
+
         ));
     }
 }

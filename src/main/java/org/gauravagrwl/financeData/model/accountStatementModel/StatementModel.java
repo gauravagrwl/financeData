@@ -1,4 +1,4 @@
-package org.gauravagrwl.financeData.model.accountTransStatement;
+package org.gauravagrwl.financeData.model.accountStatementModel;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -6,26 +6,24 @@ import org.gauravagrwl.financeData.model.audit.AuditMetadata;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-/**
- * Only for those which need upload data.
- */
-
 @Getter
 @Setter
-public abstract class AccountStatementTransaction implements AccountStatementTransactionOperations {
-
+public abstract class StatementModel {
     @MongoId
     private String id;
 
-    private String accountDocumentId;
+    private String accountStatementId;
+
+    private String accountId;
 
     // If duplicate Statement
     private Boolean duplicate = Boolean.FALSE;
 
+    // If statement is reconciled: update in cash_flow or holding calculations
     private Boolean reconciled = Boolean.FALSE;
+
     private AuditMetadata audit = new AuditMetadata();
 
     @Version
     private Integer version;
-
 }

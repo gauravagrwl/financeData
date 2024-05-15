@@ -1,7 +1,7 @@
 package org.gauravagrwl.financeData.model.accountTransStatement;
 
-import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
-import org.gauravagrwl.financeData.model.statementModel.StatementModel;
+import org.gauravagrwl.financeData.model.accountCollection.AccountCollection;
+import org.gauravagrwl.financeData.model.accountStatementModel.StatementModel;
 
 import java.util.List;
 

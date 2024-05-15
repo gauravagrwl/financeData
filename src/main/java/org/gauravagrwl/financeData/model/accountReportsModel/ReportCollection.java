@@ -1,30 +1,24 @@
-package org.gauravagrwl.financeData.model.accountTransStatement;
+package org.gauravagrwl.financeData.model.accountReportsModel;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.gauravagrwl.financeData.model.audit.AuditMetadata;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-/**
- * Only for those which need upload data.
- */
-
-@Getter
-@Setter
-public abstract class AccountStatementTransaction implements AccountStatementTransactionOperations {
+public abstract class ReportCollection implements ReportOperation {
 
     @MongoId
+    @Getter
     private String id;
 
+    @NotBlank
+    @Getter
+    @Setter
     private String accountDocumentId;
 
-    // If duplicate Statement
-    private Boolean duplicate = Boolean.FALSE;
-
-    private Boolean reconciled = Boolean.FALSE;
     private AuditMetadata audit = new AuditMetadata();
-
     @Version
     private Integer version;
 

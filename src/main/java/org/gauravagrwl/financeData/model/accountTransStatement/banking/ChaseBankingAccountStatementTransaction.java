@@ -6,12 +6,12 @@ import com.opencsv.bean.CsvCustomBindByName;
 import com.opencsv.bean.CsvCustomBindByNames;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.gauravagrwl.financeData.helper.CsvAmountStringToBigDecimalConverter;
-import org.gauravagrwl.financeData.helper.CsvMDYDateStringToDateConverter;
+import org.gauravagrwl.financeData.helper.converters.CsvAmountStringToBigDecimalConverter;
+import org.gauravagrwl.financeData.helper.converters.CsvMDYDateStringToDateConverter;
+import org.gauravagrwl.financeData.model.accountCollection.AccountCollection;
+import org.gauravagrwl.financeData.model.accountStatementModel.BankAccountStatementModel;
+import org.gauravagrwl.financeData.model.accountStatementModel.StatementModel;
 import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
-import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
-import org.gauravagrwl.financeData.model.statementModel.BankAccountStatementModel;
-import org.gauravagrwl.financeData.model.statementModel.StatementModel;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,7 +35,7 @@ public class ChaseBankingAccountStatementTransaction extends AccountStatementTra
     private String s_details; // If Dr., Cr.
 
     @CsvBindByNames({@CsvBindByName, @CsvBindByName(column = "Description", profiles = {"Chase_SAV", "Chase_CHK"}),})
-    private String s_descriptions; // Descriptions
+    private String s_description; // Descriptions
 
     @CsvCustomBindByNames({
             @CsvCustomBindByName(column = "Amount", converter = CsvAmountStringToBigDecimalConverter.class, profiles = {
@@ -66,7 +66,7 @@ public class ChaseBankingAccountStatementTransaction extends AccountStatementTra
         statementModel.setAccountStatementId(getId());
         statementModel.setAccountId(accountCollection.getId());
         statementModel.setC_transactionDate(s_posting_Date);
-        statementModel.setC_description(s_descriptions);
+        statementModel.setC_description(s_description);
         statementModel.setC_notes(s_check_Slip);
         statementModel.setDuplicate(getDuplicate());
         if (StringUtils.equalsIgnoreCase(s_details, "Credit")) {
@@ -74,7 +74,7 @@ public class ChaseBankingAccountStatementTransaction extends AccountStatementTra
             statementModel.setC_credit(s_amount.abs().setScale(2));
         } else {
             statementModel.setC_type("Dr.");
-            statementModel.setC_credit(s_amount.abs().setScale(2));
+            statementModel.setC_debit(s_amount.abs().setScale(2));
         }
         statementModel.setStatement(this);
 

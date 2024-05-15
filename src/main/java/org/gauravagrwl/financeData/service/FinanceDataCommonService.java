@@ -4,12 +4,15 @@ import com.mongodb.client.result.UpdateResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
+import org.gauravagrwl.financeData.helper.enums.Category_I;
+import org.gauravagrwl.financeData.model.accountCollection.AccountCollection;
+import org.gauravagrwl.financeData.model.accountReportsModel.ReportCollection;
+import org.gauravagrwl.financeData.model.accountReportsModel.banking.CashFlowReportCollection;
+import org.gauravagrwl.financeData.model.accountReportsModel.investment.StockHoldingCollection;
+import org.gauravagrwl.financeData.model.accountStatementModel.BankAccountStatementModel;
+import org.gauravagrwl.financeData.model.accountStatementModel.StatementModel;
+import org.gauravagrwl.financeData.model.accountStatementModel.StockInvestmentAccountStatementModel;
 import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
-import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
-import org.gauravagrwl.financeData.model.profileAccount.reportCollection.ReportCollection;
-import org.gauravagrwl.financeData.model.profileAccount.reportCollection.investment.StockHoldingCollection;
-import org.gauravagrwl.financeData.model.statementModel.StatementModel;
-import org.gauravagrwl.financeData.model.statementModel.StockInvestmentAccountStatementModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -36,7 +39,10 @@ public class FinanceDataCommonService {
     AccountService accountService;
 
     @Autowired
-    AccountStatementDocumentService accountStatementDocumentService;
+    AccountStatementModelService accountStatementModelService;
+
+    @Autowired
+    AccountStatementModelService statementService;
 
 
     public void calculateAllAccountBalance() {
@@ -49,18 +55,13 @@ public class FinanceDataCommonService {
     }
 
     public void calculateUpdateAccountStatement(AccountCollection userAccount) {
-        if (userAccount.getUpdateAccountAppStatementNeeded()) {
+        if (userAccount.getUpdateAccountStatementModelNeeded()) {
             log.info("Calculating account balance for account: " + userAccount.getAccountNumber());
-            List<AccountStatementTransaction> accountStatementTransactionList = accountStatementDocumentService.getAccountTransactionStatementDocuments(userAccount);
+            List<AccountStatementTransaction> accountStatementTransactionList = statementService.getAccountTransactionStatementDocuments(userAccount);
             accountStatementTransactionList = accountStatementTransactionList.stream().filter(Predicate.not(AccountStatementTransaction::getReconciled)).collect(Collectors.toList());
             List<StatementModel> statementModelList = new ArrayList<>();
             for (AccountStatementTransaction transactionStatement : accountStatementTransactionList) {
                 statementModelList.addAll(transactionStatement.updateAccountStatement(userAccount));
-
-                //TODO: Reconcile after update is done.
-                UpdateResult updateResult = template.updateFirst(FinanceDataHelper.findById(transactionStatement.getId()),
-                        FinanceDataHelper.updateReconcileIndicatorDefination, AccountStatementTransaction.class, userAccount.getAccountTransactionCollectionName());
-                log.info(updateResult.toString());
             }
             userAccount.calculateAndUpdateAccountStatements(statementModelList);
             if (userAccount.getUpdateAccountStatement()) {
@@ -80,24 +81,63 @@ public class FinanceDataCommonService {
     private void updateStatmentModelList(AccountCollection userAccount, List<StatementModel> accountStatementModelList) {
         for (StatementModel statementModel : accountStatementModelList) {
             StatementModel insert = template.insert(statementModel, userAccount.getAccountStatementCollectionName());
+            String transactionStatementId = insert.getAccountStatementId();
             log.info("Statement saved with id: " + insert.getId());
+            UpdateResult updateResult = template.updateFirst(FinanceDataHelper.findById(transactionStatementId),
+                    FinanceDataHelper.updateReconcileIndicatorDefination, AccountStatementTransaction.class, userAccount.getAccountTransactionCollectionName());
+            log.info(updateResult.toString());
+
+
         }
     }
 
     public void calculateUpdateAccountReport(AccountCollection userAccount) {
         if (userAccount.getUpdateAccountReportNeeded()) {
             log.info("Updating Account Reports: " + userAccount.getAccountNumber());
-
-            List<StatementModel> statementModelList = accountStatementDocumentService.getAccountStatementDocuments(userAccount);
-            updateStockHoldingReports(statementModelList, userAccount);
-//            switch (userAccount.getProfileType()) {
-//                case "Robinhood_STOCK" -> {
-//                    updateStockHoldingReports(statementModelList, userAccount);
-//                }
-//                default -> {
-//                }
-//            }
+            List<StatementModel> statementModelList = accountStatementModelService.getAccountStatementDocuments(userAccount);
+            switch (userAccount.getInstitutionCategory()) {
+                case INVESTMENT -> {
+                    updateStockHoldingReports(statementModelList, userAccount);
+                }
+                case BANKING -> {
+                    updateCashFlowReports(statementModelList, userAccount);
+                }
+                default -> {
+                    log.warn("No report operation defined for: " + userAccount.getInstitutionCategory());
+                }
+            }
         }
+    }
+
+    private void updateCashFlowReports(List<StatementModel> statementModelList, AccountCollection userAccount) {
+        for (StatementModel statementModel : statementModelList) {
+            BankAccountStatementModel statement = (BankAccountStatementModel) statementModel;
+            List<CashFlowReportCollection> cashFlowReportCollectionList = new ArrayList<>();
+            if (!statement.getReconciled()) {
+                CashFlowReportCollection cashFlowReport = getCashFlowReportCollection(userAccount, statement);
+                cashFlowReportCollectionList.add(cashFlowReport);
+                template.updateFirst(FinanceDataHelper.findById(statement.getId()), FinanceDataHelper.updateReconcileIndicatorDefination, StatementModel.class, userAccount.getAccountStatementCollectionName());
+                template.insert(cashFlowReportCollectionList, userAccount.getAccountReportCollectionName());
+            }
+        }
+    }
+
+    private static CashFlowReportCollection getCashFlowReportCollection(AccountCollection userAccount, BankAccountStatementModel statement) {
+        CashFlowReportCollection cashFlowReport = new CashFlowReportCollection();
+        cashFlowReport.setAccountDocumentId(userAccount.getId());
+        cashFlowReport.setAccountStatementModelId(statement.getId());
+        cashFlowReport.setTransactionDate(statement.getC_transactionDate());
+        cashFlowReport.setDescription(statement.getC_description());
+        cashFlowReport.setType(statement.getC_type());
+        if (statement.getC_type().equalsIgnoreCase("Cr.")) {
+            cashFlowReport.setAmmount(statement.getC_credit());
+            cashFlowReport.setCategory_i(Category_I.IN);
+        } else {
+            cashFlowReport.setAmmount(statement.getC_debit());
+            cashFlowReport.setCategory_i(Category_I.OUT);
+        }
+        cashFlowReport.setYear(statement.getC_transactionDate().getYear());
+        return cashFlowReport;
     }
 
     private void updateStockHoldingReports(List<StatementModel> statementModelList, AccountCollection userAccount) {
@@ -107,6 +147,7 @@ public class FinanceDataCommonService {
                 AccountStatementTransaction transaction = template.findOne(FinanceDataHelper.findById(statement.getAccountStatementId()), AccountStatementTransaction.class, userAccount.getAccountTransactionCollectionName());
                 Query findByInstrumentName = new Query(Criteria.where("instrument").is(statement.findByKeyAssets()));
                 List<ReportCollection> reportCollections = template.find(findByInstrumentName, ReportCollection.class, userAccount.getAccountReportCollectionName());
+
                 if (reportCollections.size() == 1) {
                     StockHoldingCollection stockHolding = (StockHoldingCollection) reportCollections.get(0);
                     stockHolding.calculateHolding(statement);
@@ -120,98 +161,10 @@ public class FinanceDataCommonService {
                     newHolding.getHoldingTransactionList().add(transaction);
                     template.insert(newHolding, userAccount.getAccountReportCollectionName());
                 }
+                template.updateFirst(FinanceDataHelper.findById(statement.getId()), FinanceDataHelper.updateReconcileIndicatorDefination, StatementModel.class, userAccount.getAccountStatementCollectionName());
             }
-            template.updateFirst(FinanceDataHelper.findById(statement.getId()), FinanceDataHelper.updateReconcileIndicatorDefination, StatementModel.class, userAccount.getAccountStatementCollectionName());
         }
+        List<ReportCollection> holdingList = template.findAll(ReportCollection.class, userAccount.getAccountReportCollectionName());
+        log.info("Holding updated...");
     }
 }
-//        List<? extends AccountStatementDocument> accountStatementlist = (accountStatementDocumentService.getAccountStatementDocuments(userAccount)).stream().filter(accountStatementDocument -> !accountStatementDocument.getReconciled()).toList();
-//        log.info("Total record need processing: " + accountStatementlist.size());
-//        for (AccountStatementDocument accountStatement : accountStatementlist) {
-//            switch (userAccount.getInstitutionCategory()) {
-//                case BANKING -> {
-//                    CashFlowHoldingDocument doc = new CashFlowHoldingDocument();
-//                    doc.updateReport(accountStatement);
-//                    doc.setAccountDocumentId(userAccount.getId());
-//                    template.insert(doc, userAccount.getAccountReportCollectionName());
-//                }
-//                case INVESTMENT -> {
-//                    if (!accountStatement.findKeyName().isBlank()) {
-//                        Query findByInstrumentName = new Query(Criteria.where("instrument").is(accountStatement.findKeyName()));
-//                        List<ReportCollection> reportCollections = template.find(findByInstrumentName, ReportCollection.class, userAccount.getAccountReportCollectionName());
-//                        if (reportCollections.size() == 1) {
-//                            HoldingCollection holdingCollection = (HoldingCollection) reportCollections.get(0);
-//                            holdingCollection.calculateHolding_PartTwo(accountStatement);
-//                            template.save(holdingCollection, userAccount.getAccountReportCollectionName());
-//                        } else {
-//                            HoldingCollection newHolding = new StockHoldingCollection();
-//                            newHolding.setInstrument(accountStatement.findKeyName());
-//                            newHolding.setAccountDocumentId(userAccount.getId());
-//                            newHolding.calculateHolding_PartTwo(accountStatement);
-//                            template.insert(newHolding, userAccount.getAccountReportCollectionName());
-//                        }
-//                    }
-//
-//
-//                }
-//need to re calculate the report again.
-
-//            template.updateFirst(FinanceDataHelper.findById(accountStatement.getId()), updateReconcileIndicatorDefination, AccountStatementDocument.class, userAccount.getAccountStatementCollectionName());
-//    }
-//}
-
-//                public void calculateUpdateAccountReport(AccountCollection userAccount) {
-//                    List<? extends AccountStatementDocument> accountStatementlist = accountStatementDocumentService.getAccountStatementDocuments(userAccount);
-//
-//                    if (userAccount.getUpdateAccountReportNeeded()) {
-//                        List<? extends HoldingCollection> updateReportList = userAccount.calculateAndUpdateAccountReports(accountStatementlist);
-//                        for (HoldingCollection ard : updateReportList) {
-//                            template.save(ard, userAccount.getAccountReportCollectionName());
-//                        }
-//                    }
-//
-//                }
-
-
-//    public void updateCashFlowDocuments(AccountDocument accountDocument,
-//                                        List<BankAccountStatementDocument> bankAccountStatementList) {
-//        bankAccountStatementList.forEach(statement -> {
-//            if (!statement.getReconciled()) {
-//                buildCashFlowTransaction(statement);
-//            }
-//        });
-//
-//    }
-
-//    private void buildCashFlowTransaction(BankAccountStatementDocument accountStatement) {
-//        CashFlowReportDocument cashFlowTransactionDocument = new CashFlowReportDocument();
-//
-//        cashFlowTransactionDocument.setTransactionDate(accountStatement.getTransactionDate());
-//        cashFlowTransactionDocument.setYear(accountStatement.getTransactionDate().getYear());
-//        cashFlowTransactionDocument.setDescription(accountStatement.getDescriptions());
-//        cashFlowTransactionDocument.setCashIn(accountStatement.getCredit());
-//        cashFlowTransactionDocument.setCashOut(accountStatement.getDebit());
-//        cashFlowTransactionDocument.setAccountStatementId(accountStatement.getId());
-//        if (cashFlowTransactionDocument.getCashIn().compareTo(BigDecimal.ZERO) > 0) {
-//            cashFlowTransactionDocument.setTransactionType("CashIn");
-//        } else {
-//            cashFlowTransactionDocument.setTransactionType("CashOut");
-//        }
-//        cashFlowTransactionDocumentRepository.save(cashFlowTransactionDocument);
-//        // accountStatement.setReconciled(Boolean.TRUE);
-//        accountStatementDocumentRepository.findAndUpdateReconcileById(accountStatement.getId(),
-//                Boolean.TRUE);
-
-// Query query = new Query(Criteria.where("id").is(accountStatement.getId()));
-// Update update = Update.update("reconciled", Boolean.TRUE);
-// template.updateFirst(query, update, BankAccountStatementDocument.class);
-// AccountStatementDocument accountStatementDocument =
-// accountStatementDocumentRepository
-// .findById(accountStatement.getId()).get();
-// accountStatementDocument.setReconciled(Boolean.TRUE);
-// accountStatementDocumentRepository.save(accountStatementDocument);
-
-// accountStatementDocumentRepository.save(accountStatement);
-// return cashFlowTransactionDocument;
-
-//    }

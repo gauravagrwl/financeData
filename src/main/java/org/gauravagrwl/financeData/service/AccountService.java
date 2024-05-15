@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.gauravagrwl.financeData.exception.FinanceDataException;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
-import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
-import org.gauravagrwl.financeData.model.repositories.AccountDocumentRepository;
+import org.gauravagrwl.financeData.model.accountCollection.AccountCollection;
+import org.gauravagrwl.financeData.model.repositories.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -20,14 +20,14 @@ import java.util.List;
 @Slf4j
 public class AccountService {
 
-    private AccountDocumentRepository accountDocumentRepository;
+    private AccountRepository accountRepository;
 
     @Autowired
     MongoTemplate template;
     private ProfileService profileService;
 
-    public AccountService(AccountDocumentRepository accountDocumentRepository, ProfileService profileService) {
-        this.accountDocumentRepository = accountDocumentRepository;
+    public AccountService(AccountRepository accountRepository, ProfileService profileService) {
+        this.accountRepository = accountRepository;
         this.profileService = profileService;
     }
 
@@ -35,26 +35,38 @@ public class AccountService {
 
         String profileId = profileService.getUserProfileDocument(userName).getId();
         accountCollection.setProfileDocumentId(profileId);
+
         String profileName = StringUtils.join(accountCollection.getInstitutionName(), "_", accountCollection.getAccountType().getAccountTypeName());
         accountCollection.setProfileType(profileName);
-        String accountDispalyName = FinanceDataHelper.getAccountDisplayName(userName, accountCollection.getProfileType(), accountCollection.getAccountNumber())
+
+        String accountDispalyName = FinanceDataHelper.getAccountDisplayName(userName, accountCollection.getProfileType(), accountCollection.getAccountNumber());
+
         accountCollection.setAccountDisplayName(accountDispalyName);
 
         accountCollection.setAccountStatementCollectionName(
                 FinanceDataHelper.getStatementCollectionName(accountDispalyName));
         accountCollection.setAccountTransactionCollectionName(
                 FinanceDataHelper.getAccountTransactionCollectionName(accountDispalyName));
-        accountCollection.setAccountReportCollectionName(
-                FinanceDataHelper.getReportCollectionName(accountDispalyName));
+        switch (accountCollection.getInstitutionCategory()) {
+            case INVESTMENT -> accountCollection.setAccountReportCollectionName(
+                    FinanceDataHelper.getHoldingCollectionName(accountDispalyName));
+            case BANKING -> accountCollection.setAccountReportCollectionName(
+                    FinanceDataHelper.getCashFlowCollectionName(accountDispalyName));
+            case ASSETS -> accountCollection.setAccountReportCollectionName(
+                    FinanceDataHelper.getAssetsCollectionName(accountDispalyName));
+            case LOAN -> accountCollection.setAccountReportCollectionName(
+                    FinanceDataHelper.getReportCollectionName(accountDispalyName));
+            default -> throw new FinanceDataException("getInstitutionCategory not defined for the account.");
+        }
 
-        AccountCollection save = accountDocumentRepository.save(accountCollection);
+        AccountCollection save = accountRepository.save(accountCollection);
 
         return save.getId();
     }
 
-    public AccountCollection getAccountDocument(String accountId, String userName) {
+    public AccountCollection getAccountDetails(String accountId, String userName) {
         if (accountId != null && isUserAccountExist(accountId, userName)) {
-            return accountDocumentRepository.findById(accountId).get();
+            return accountRepository.findById(accountId).get();
         }
         throw new FinanceDataException("Account Id is null or not exist.");
 
@@ -62,35 +74,35 @@ public class AccountService {
 
     public boolean isUserAccountExist(String accountId, String userName) {
         String profileId = profileService.getUserProfileDocument(userName).getId();
-        return accountDocumentRepository.existsByIdAndProfileDocumentId(accountId,
+        return accountRepository.existsByIdAndProfileDocumentId(accountId,
                 profileId);
     }
 
     public List<AccountCollection> getUserAccounts(String userName) {
         String profileId = profileService.getUserProfileDocument(userName).getId();
         Sort sort = Sort.by(Direction.DESC, "institutionCurrency").and(Sort.by(Direction.ASC, "institutionName"));
-        List<AccountCollection> byProfileDocumentId = accountDocumentRepository.findByProfileDocumentId(profileId, sort);
+        List<AccountCollection> byProfileDocumentId = accountRepository.findByProfileDocumentId(profileId, sort);
         return byProfileDocumentId;
     }
 
     public void toggleAccount(String userName, @NotNull String accountId) {
         if (accountId != null && isUserAccountExist(accountId, userName)) {
-            AccountCollection document = accountDocumentRepository.findById(accountId).get();
+            AccountCollection document = accountRepository.findById(accountId).get();
             document.setIsActive(!document.getIsActive());
-            accountDocumentRepository.save(document);
+            accountRepository.save(document);
         }
         throw new FinanceDataException("Account Id is null or not exist.");
     }
 
     public void deleteProfileAccount(String accountId, String userName) {
         if (accountId != null && isUserAccountExist(accountId, userName)) {
-            AccountCollection accountCollection = accountDocumentRepository.findById(accountId).get();
+            AccountCollection accountCollection = accountRepository.findById(accountId).get();
             String accountReportCollectionName = accountCollection.getAccountReportCollectionName();
             String accountStatementCollectionName = accountCollection.getAccountStatementCollectionName();
             template.remove(new Query(), accountReportCollectionName);
             template.remove(new Query(), accountStatementCollectionName);
             accountCollection.resetFields();
-            accountDocumentRepository.save(accountCollection);
+            accountRepository.save(accountCollection);
 
 //            accountDocumentRepository.deleteById(accountId);
         } else {
@@ -99,13 +111,13 @@ public class AccountService {
     }
 
     public void setUpdateCalculateBalanceFlag(AccountCollection accountCollection) {
-        accountDocumentRepository.findAndUpdateNeededFlagById(accountCollection.getId(), accountCollection.getUpdateAccountAppStatementNeeded(),
+        accountRepository.findAndUpdateNeededFlagById(accountCollection.getId(), accountCollection.getUpdateAccountStatementModelNeeded(),
                 accountCollection.getUpdateAccountReportNeeded(), accountCollection.getUpdateCashFlowReportNeeded());
 
     }
 
     public void setisBalanceCalculatedeById(AccountCollection accountCollection) {
-        accountDocumentRepository.findAndUpdateBalanceCalculatedById(accountCollection.getId(), accountCollection.getBalanceCalculated());
+        accountRepository.findAndUpdateBalanceCalculatedById(accountCollection.getId(), accountCollection.getBalanceCalculated());
 
     }
 

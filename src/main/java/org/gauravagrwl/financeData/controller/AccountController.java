@@ -2,10 +2,10 @@ package org.gauravagrwl.financeData.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.gauravagrwl.financeData.helper.AccountTypeEnum;
 import org.gauravagrwl.financeData.helper.FinanceDataHelper;
-import org.gauravagrwl.financeData.helper.InstitutionCategoryEnum;
-import org.gauravagrwl.financeData.model.profileAccount.accountCollection.AccountCollection;
+import org.gauravagrwl.financeData.helper.enums.AccountTypeEnum;
+import org.gauravagrwl.financeData.helper.enums.InstitutionCategoryEnum;
+import org.gauravagrwl.financeData.model.accountCollection.AccountCollection;
 import org.gauravagrwl.financeData.service.AccountService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -68,7 +68,7 @@ public class AccountController {
     public ResponseEntity<AccountCollection> getProfileAccount(
             @RequestParam(name = "userName", required = true) String userName,
             @RequestParam(name = "accountId", required = true) String accountId) {
-        AccountCollection accountCollection = accountService.getAccountDocument(accountId, userName);
+        AccountCollection accountCollection = accountService.getAccountDetails(accountId, userName);
         return ResponseEntity.ok(accountCollection);
     }
 

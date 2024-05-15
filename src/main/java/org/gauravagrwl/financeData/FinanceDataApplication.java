@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableMongoRepositories("org.gauravagrwl.financeData.model")
 @EnableAsync
-@OpenAPIDefinition(info = @Info(title = "Market Data API"))
+@OpenAPIDefinition(info = @Info(title = "Personal Finance Data API"))
 public class FinanceDataApplication {
 
     public static void main(String[] args) {
@@ -29,8 +29,14 @@ public class FinanceDataApplication {
     // TODO: Add Swagger Documentations
     // TODO: Use UUID
     // TODO: Add hard stop no update once reconciled. do not allow duplicate record insert after that. Any update only after that date and recalculate / update from date date.
-    //TODO: Current name is confusing need to rename- methods and attributes
-    //TODO: Handle delete operation properly. as it need to be propogated.
+    // TODO: Current name is confusing need to rename- methods and attributes
+    // TODO: Handle delete operation properly. as it need to be propogated.
+    // TODO: For Category
+    //    I -> Cash_out - DropDown
+    //    II -> Inv_OUT - DropDown
+    //    III -> Crypto - DropDown
+    //    IV -> Free form Text
+    //    V -> Amount
 
 
 }
