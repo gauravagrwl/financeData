@@ -1,11 +1,12 @@
 package org.gauravagrwl.financeData.model.accountCollection;
 
-import com.opencsv.bean.MappingStrategy;
+import com.opencsv.bean.CsvToBean;
 import org.gauravagrwl.financeData.model.accountStatementModel.StatementModel;
 import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -28,7 +29,8 @@ public interface AccountOperation {
 
     public Update updateAccountBalanceDefination();
 
-    MappingStrategy<? extends AccountStatementTransaction> getHeaderColumnNameModelMappingStrategy();
+
+    CsvToBean<AccountStatementTransaction> getCsvStatementMapperToBean(InputStreamReader reader);
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

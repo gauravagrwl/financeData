@@ -2,7 +2,6 @@ package org.gauravagrwl.financeData.model.accountStatementModel;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,7 +24,4 @@ public class BankAccountStatementModel extends StatementModel {
     private String c_notes;
 
     private BigDecimal c_transactionBalance;
-
-    private AccountStatementTransaction statement;
-
 }

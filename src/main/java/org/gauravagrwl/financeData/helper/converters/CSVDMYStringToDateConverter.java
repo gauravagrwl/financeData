@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 
 public class CSVDMYStringToDateConverter extends AbstractBeanField<String, LocalDate> {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMM yyyy");
+//    private static final DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern("d MMM yyyy").toFormatter(Locale.ENGLISH);
 
     @Override
     protected Object convert(String value) throws CsvDataTypeMismatchException, CsvConstraintViolationException {

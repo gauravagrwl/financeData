@@ -104,9 +104,8 @@ public class RobinhoodStockAccountStatementTransaction extends AccountStatementT
     public List<StatementModel> updateAccountStatement(AccountCollection accountCollection) {
         List<StatementModel> statementModelList = new ArrayList<>();
         StockInvestmentAccountStatementModel statementModel = new StockInvestmentAccountStatementModel();
-        setAccountDocumentId(accountCollection.getId());
         statementModel.setAccountId(accountCollection.getId());
-        statementModel.setAccountStatementId(getId());
+        statementModel.setAccountTransactionId(getId());
         statementModel.setC_instrument(s_instrument);
         statementModel.setC_transaction_dateTime(ZonedDateTime.of(s_settle_Date, LocalTime.NOON, ZoneId.of("UTC")));
         statementModel.setC_description(s_description);

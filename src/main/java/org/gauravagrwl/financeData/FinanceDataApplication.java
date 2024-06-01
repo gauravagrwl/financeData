@@ -27,7 +27,7 @@ public class FinanceDataApplication {
     // TODO: Exception Handling
     // TODO: Set validations
     // TODO: Add Swagger Documentations
-    // TODO: Use UUID
+    // TODO: Use UUID instead of string id for mongoId
     // TODO: Add hard stop no update once reconciled. do not allow duplicate record insert after that. Any update only after that date and recalculate / update from date date.
     // TODO: Current name is confusing need to rename- methods and attributes
     // TODO: Handle delete operation properly. as it need to be propogated.
@@ -37,6 +37,7 @@ public class FinanceDataApplication {
     //    III -> Crypto - DropDown
     //    IV -> Free form Text
     //    V -> Amount
+    //TODO: Only profit and loss in + / - all other are in +
 
 
 }

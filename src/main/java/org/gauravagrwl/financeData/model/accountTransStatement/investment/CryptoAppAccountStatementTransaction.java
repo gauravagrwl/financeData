@@ -84,9 +84,8 @@ public class CryptoAppAccountStatementTransaction extends AccountStatementTransa
     public List<StatementModel> updateAccountStatement(AccountCollection accountCollection) {
         List<StatementModel> statementModelList = new ArrayList<>();
         StockInvestmentAccountStatementModel sm = new StockInvestmentAccountStatementModel();
-        setAccountDocumentId(accountCollection.getId());
         sm.setAccountId(accountCollection.getId());
-        sm.setAccountStatementId(getId());
+        sm.setAccountTransactionId(getId());
         sm.setC_transaction_dateTime(s_timestamp);
         sm.setC_description(s_transaction_description);
         switch (s_transaction_kind) {
@@ -123,7 +122,7 @@ public class CryptoAppAccountStatementTransaction extends AccountStatementTransa
 
                 StockInvestmentAccountStatementModel bm = new StockInvestmentAccountStatementModel();
                 bm.setAccountId(accountCollection.getId());
-                bm.setAccountStatementId(getId());
+                bm.setAccountTransactionId(getId());
                 bm.setC_transaction_dateTime(s_timestamp);
                 bm.setC_description(s_transaction_description);
                 bm.setC_trans_code(TransactionKindEnum.Buy);

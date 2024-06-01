@@ -1,5 +1,7 @@
 package org.gauravagrwl.financeData.model.accountCollection;
 
+import com.opencsv.bean.CsvToBean;
+import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.HeaderColumnNameMappingStrategyBuilder;
 import com.opencsv.bean.MappingStrategy;
 import lombok.AllArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -47,39 +50,55 @@ public class InvestmentAccountCollection extends AccountCollection {
     private Boolean isAutoTradable = Boolean.FALSE;
 
     @Override
-    public MappingStrategy<? extends AccountStatementTransaction> getHeaderColumnNameModelMappingStrategy() {
+    public Update updateAccountBalanceDefination() {
+        return new Update().set("amountInvestment", this.getAmountInvestment()).set("cashInvestment", this.getCashInvestment()).set("cashReturn", this.getCashReturn());
+    }
+
+    @Override
+    public CsvToBean<AccountStatementTransaction> getCsvStatementMapperToBean(InputStreamReader reader) {
         switch (getProfileType()) {
             case "Robinhood_STOCK" -> {
                 MappingStrategy<RobinhoodStockAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<RobinhoodStockAccountStatementTransaction>()
                         .withForceCorrectRecordLength(true).build();
                 headerColumnNameMappingStrategy.setProfile(getProfileType());
                 headerColumnNameMappingStrategy.setType(RobinhoodStockAccountStatementTransaction.class);
-                return headerColumnNameMappingStrategy;
+                return new CsvToBeanBuilder<AccountStatementTransaction>(
+                        reader)
+                        .withProfile(getProfileType())
+                        .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
+                        .withMappingStrategy(headerColumnNameMappingStrategy)
+                        .build();
             }
             case "CryptoApp_CRYPTO" -> {
                 MappingStrategy<CryptoAppAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<CryptoAppAccountStatementTransaction>()
                         .withForceCorrectRecordLength(true).build();
                 headerColumnNameMappingStrategy.setProfile(getProfileType());
                 headerColumnNameMappingStrategy.setType(CryptoAppAccountStatementTransaction.class);
-                return headerColumnNameMappingStrategy;
+                return new CsvToBeanBuilder<AccountStatementTransaction>(
+                        reader)
+                        .withProfile(getProfileType())
+                        .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
+                        .withMappingStrategy(headerColumnNameMappingStrategy)
+                        .build();
             }
             case "Coinbase_CRYPTO" -> {
                 MappingStrategy<CoinbaseAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<CoinbaseAccountStatementTransaction>()
                         .withForceCorrectRecordLength(true).build();
                 headerColumnNameMappingStrategy.setProfile(getProfileType());
                 headerColumnNameMappingStrategy.setType(CoinbaseAccountStatementTransaction.class);
-                return headerColumnNameMappingStrategy;
+                return new CsvToBeanBuilder<AccountStatementTransaction>(
+                        reader)
+                        .withProfile(getProfileType())
+                        .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
+                        .withMappingStrategy(headerColumnNameMappingStrategy)
+                        .build();
             }
-
             default -> {
+                log.error("No Maping strategy defined for :" + getProfileType());
+//                throw new FinanceDataException("No Maping strategy defined for :" + getProfileType());
                 return null;
             }
         }
-    }
-
-    @Override
-    public Update updateAccountBalanceDefination() {
-        return new Update().set("amountInvestment", this.getAmountInvestment()).set("cashInvestment", this.getCashInvestment()).set("cashReturn", this.getCashReturn());
     }
 
     @Override

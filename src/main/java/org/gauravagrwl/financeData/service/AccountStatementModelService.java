@@ -31,22 +31,6 @@ public class AccountStatementModelService {
         this.template = template;
     }
 
-    /**
-     * @param accountDocument
-     * @param pageNumber
-     * @param pageSize
-     * @return
-     */
-//    public List<? extends AccountStatementDocument> getAccountStatementDocuments(
-//            AccountDocument accountDocument, Integer pageNumber, Integer pageSize) {
-//        log.info("in getAccountStatementDocuments with page number");
-//        Sort sort = Sort.by(Direction.ASC, "transactionDate").and(Sort.by(Direction.ASC, "type"));
-//        PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, sort);
-//        List<AccountStatementDocument> accountStatementList = accountStatementDocumentRepository
-//                .findByAccountDocumentId(accountDocument.getId(), pageRequest);
-//        log.info("out getAccountStatementDocuments with page number");
-//        return accountStatementList;
-//    }
     public List<StatementModel> getAccountStatementDocuments(
             AccountCollection accountCollection) {
         log.info("in getAccountStatementDocuments with sort");
@@ -59,13 +43,19 @@ public class AccountStatementModelService {
         return accountStatementList;
     }
 
-    public void deleteAccountStatementDocument(AccountCollection accountCollection, String transactionId) {
+    public void deleteAccountStatementDocument(AccountCollection accountCollection, String statementId) {
         log.info("in deleteAccountStatementDocument");
 
-        AccountStatementTransaction statementDocument = template.findOne(FinanceDataHelper.findById(transactionId),
-                AccountStatementTransaction.class, accountCollection.getAccountStatementCollectionName());
+        StatementModel statementModelDocument = template.findOne(FinanceDataHelper.findById(statementId),
+                StatementModel.class, accountCollection.getAccountStatementCollectionName());
 
-        DeleteResult deleteResult = template.remove(FinanceDataHelper.findById(transactionId), AccountStatementTransaction.class,
+        AccountStatementTransaction statementTransaction = template.findOne(FinanceDataHelper.findById(statementModelDocument.getAccountTransactionId()),
+                AccountStatementTransaction.class, accountCollection.getAccountTransactionCollectionName());
+
+        DeleteResult deleteTransactionResult = template.remove(FinanceDataHelper.findById(statementModelDocument.getAccountTransactionId()), AccountStatementTransaction.class,
+                accountCollection.getAccountTransactionCollectionName());
+
+        DeleteResult deleteStatementResult = template.remove(FinanceDataHelper.findById(statementId), StatementModel.class,
                 accountCollection.getAccountStatementCollectionName());
 
         Query query = null; //accountCollection.findDuplicateRecordQuery(statementDocument, accountCollection.getProfileType());
@@ -95,10 +85,11 @@ public class AccountStatementModelService {
         return accountStatementList;
     }
 
-    public void saveAccountStatementModelList(List<AccountStatementTransaction> statementModelList, AccountCollection accountCollection) {
+    public void saveAccountTransactionList(List<AccountStatementTransaction> statementModelList, AccountCollection accountCollection) {
         log.info("Saving account statement for account: " + FinanceDataHelper.getAccountDisplayNumber(accountCollection.getAccountNumber()));
         String accountStatementCollectionName = accountCollection.getAccountTransactionCollectionName();
         for (AccountStatementTransaction accountStatementTransaction : statementModelList) {
+            accountStatementTransaction.setAccountDocumentId(accountCollection.getId());
             Query query = accountCollection.findDuplicateRecordQuery(accountStatementTransaction);
             UpdateResult updateMultiResult = template.updateMulti(query, updateDuplicateIndicatorDefination,
                     AccountStatementTransaction.class, accountStatementCollectionName);
@@ -115,5 +106,4 @@ public class AccountStatementModelService {
         accountService.setUpdateCalculateBalanceFlag(accountCollection);
         log.info("out saveAccountStatementDocuments");
     }
-
 }

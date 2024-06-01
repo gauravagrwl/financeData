@@ -37,7 +37,7 @@ public class AccountStatementController {
         return ResponseEntity.ok(accountStatementDocuments);
     }
 
-    @DeleteMapping(value = "/deleteTransaction")
+    @DeleteMapping(value = "/deleteStatement")
     public ResponseEntity<String> deleteAccountTransaction(
             @RequestParam(name = "userName", required = true) String userName,
             @RequestParam(name = "accountId", required = true) String accountId,

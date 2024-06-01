@@ -61,9 +61,8 @@ public class ChaseBankingAccountStatementTransaction extends AccountStatementTra
     @Override
     public List<StatementModel> updateAccountStatement(AccountCollection accountCollection) {
         List<StatementModel> statementModelList = new ArrayList<>();
-        setAccountDocumentId(accountCollection.getId());
         BankAccountStatementModel statementModel = new BankAccountStatementModel();
-        statementModel.setAccountStatementId(getId());
+        statementModel.setAccountTransactionId(getId());
         statementModel.setAccountId(accountCollection.getId());
         statementModel.setC_transactionDate(s_posting_Date);
         statementModel.setC_description(s_description);
@@ -76,8 +75,6 @@ public class ChaseBankingAccountStatementTransaction extends AccountStatementTra
             statementModel.setC_type("Dr.");
             statementModel.setC_debit(s_amount.abs().setScale(2));
         }
-        statementModel.setStatement(this);
-
         statementModelList.add(statementModel);
         return statementModelList;
     }

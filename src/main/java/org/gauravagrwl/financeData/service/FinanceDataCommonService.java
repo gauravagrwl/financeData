@@ -8,7 +8,7 @@ import org.gauravagrwl.financeData.helper.enums.Category_I;
 import org.gauravagrwl.financeData.model.accountCollection.AccountCollection;
 import org.gauravagrwl.financeData.model.accountReportsModel.ReportCollection;
 import org.gauravagrwl.financeData.model.accountReportsModel.banking.CashFlowReportCollection;
-import org.gauravagrwl.financeData.model.accountReportsModel.investment.StockHoldingCollection;
+import org.gauravagrwl.financeData.model.accountReportsModel.investment.HoldingCollection;
 import org.gauravagrwl.financeData.model.accountStatementModel.BankAccountStatementModel;
 import org.gauravagrwl.financeData.model.accountStatementModel.StatementModel;
 import org.gauravagrwl.financeData.model.accountStatementModel.StockInvestmentAccountStatementModel;
@@ -81,7 +81,7 @@ public class FinanceDataCommonService {
     private void updateStatmentModelList(AccountCollection userAccount, List<StatementModel> accountStatementModelList) {
         for (StatementModel statementModel : accountStatementModelList) {
             StatementModel insert = template.insert(statementModel, userAccount.getAccountStatementCollectionName());
-            String transactionStatementId = insert.getAccountStatementId();
+            String transactionStatementId = insert.getAccountTransactionId();
             log.info("Statement saved with id: " + insert.getId());
             UpdateResult updateResult = template.updateFirst(FinanceDataHelper.findById(transactionStatementId),
                     FinanceDataHelper.updateReconcileIndicatorDefination, AccountStatementTransaction.class, userAccount.getAccountTransactionCollectionName());
@@ -144,17 +144,17 @@ public class FinanceDataCommonService {
         for (StatementModel statementModel : statementModelList) {
             StockInvestmentAccountStatementModel statement = (StockInvestmentAccountStatementModel) statementModel;
             if (!StringUtils.isBlank(statement.getC_instrument()) && !statement.getReconciled()) {
-                AccountStatementTransaction transaction = template.findOne(FinanceDataHelper.findById(statement.getAccountStatementId()), AccountStatementTransaction.class, userAccount.getAccountTransactionCollectionName());
+                AccountStatementTransaction transaction = template.findOne(FinanceDataHelper.findById(statement.getAccountTransactionId()), AccountStatementTransaction.class, userAccount.getAccountTransactionCollectionName());
                 Query findByInstrumentName = new Query(Criteria.where("instrument").is(statement.findByKeyAssets()));
                 List<ReportCollection> reportCollections = template.find(findByInstrumentName, ReportCollection.class, userAccount.getAccountReportCollectionName());
 
                 if (reportCollections.size() == 1) {
-                    StockHoldingCollection stockHolding = (StockHoldingCollection) reportCollections.get(0);
+                    HoldingCollection stockHolding = (HoldingCollection) reportCollections.get(0);
                     stockHolding.calculateHolding(statement);
                     stockHolding.getHoldingTransactionList().add(transaction);
                     template.save(stockHolding, userAccount.getAccountReportCollectionName());
                 } else {
-                    StockHoldingCollection newHolding = new StockHoldingCollection();
+                    HoldingCollection newHolding = new HoldingCollection();
                     newHolding.setInstrument(statement.findByKeyAssets());
                     newHolding.setAccountDocumentId(userAccount.getId());
                     newHolding.calculateHolding(statement);

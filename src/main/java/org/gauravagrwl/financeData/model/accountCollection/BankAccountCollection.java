@@ -1,5 +1,7 @@
 package org.gauravagrwl.financeData.model.accountCollection;
 
+import com.opencsv.bean.CsvToBean;
+import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.HeaderColumnNameMappingStrategyBuilder;
 import com.opencsv.bean.MappingStrategy;
 import lombok.Getter;
@@ -16,6 +18,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -30,52 +33,24 @@ import java.util.List;
  */
 
 
+@Getter
 @Slf4j
 public class BankAccountCollection extends AccountCollection {
 
     // Account Calculated Balance
-    @Getter
     private BigDecimal accountBalance = BigDecimal.ZERO;
 
     // Account holding type
-    @Getter
     @Setter
     private String holdingType;
 
     // Account Code: Routing code or IIFC code.
-    @Getter
     @Setter
     private String accountCode;
 
     // Code Type: Routing or IIFC
-    @Getter
     @Setter
     private String accountCodeType;
-
-    @Override
-    public MappingStrategy<? extends AccountStatementTransaction> getHeaderColumnNameModelMappingStrategy() {
-        switch (getProfileType()) {
-            case "Chase_SAV", "Chase_CHK" -> {
-                MappingStrategy<ChaseBankingAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<ChaseBankingAccountStatementTransaction>()
-                        .withForceCorrectRecordLength(true).build();
-                headerColumnNameMappingStrategy.setProfile(getProfileType());
-                headerColumnNameMappingStrategy.setType(ChaseBankingAccountStatementTransaction.class);
-                return headerColumnNameMappingStrategy;
-            }
-            case "SBI_SAV" -> {
-                MappingStrategy<SbiBankingAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<SbiBankingAccountStatementTransaction>()
-                        .withForceCorrectRecordLength(true).build();
-                headerColumnNameMappingStrategy.setProfile(getProfileType());
-                headerColumnNameMappingStrategy.setType(SbiBankingAccountStatementTransaction.class);
-                return headerColumnNameMappingStrategy;
-            }
-            default -> {
-                log.error("No Maping strategy defined for :" + getProfileType());
-//                throw new FinanceDataException("No Maping strategy defined for :" + getProfileType());
-                return null;
-            }
-        }
-    }
 
     @Override
     public BigDecimal getAccountStatementBalance() {
@@ -94,17 +69,17 @@ public class BankAccountCollection extends AccountCollection {
     }
 
     @Override
-    public Query findDuplicateRecordQuery(AccountStatementTransaction statementModel) {
+    public Query findDuplicateRecordQuery(AccountStatementTransaction statementTransaction) {
         switch (getProfileType()) {
             case "Chase_SAV", "Chase_CHK" -> {
-                ChaseBankingAccountStatementTransaction statement = (ChaseBankingAccountStatementTransaction) statementModel;
+                ChaseBankingAccountStatementTransaction statement = (ChaseBankingAccountStatementTransaction) statementTransaction;
                 return new Query(
                         Criteria.where("s_posting_Date").is(statement.getS_posting_Date()).and("s_details")
                                 .is(statement.getS_details()).and("s_amount").is(statement.getS_amount())
                                 .and("s_balance").is(statement.getS_balance()));
             }
             case "SBI_SAV" -> {
-                SbiBankingAccountStatementTransaction statement = (SbiBankingAccountStatementTransaction) statementModel;
+                SbiBankingAccountStatementTransaction statement = (SbiBankingAccountStatementTransaction) statementTransaction;
                 return new Query(
                         Criteria.where("s_Txn_Date").is(statement.getS_Txn_Date())
                                 .and("s_Value_Date").is(statement.getS_Value_Date())
@@ -115,9 +90,7 @@ public class BankAccountCollection extends AccountCollection {
                                 .and("s_Balance").is(statement.getS_Balance())
                 );
             }
-            default -> {
-                throw new FinanceDataException("No duplicate query is defined for profile: " + getProfileType());
-            }
+            default -> throw new FinanceDataException("No duplicate query is defined for profile: " + getProfileType());
         }
     }
 
@@ -142,18 +115,14 @@ public class BankAccountCollection extends AccountCollection {
 
     @Override
     public Query transactionSortQuery() {
-        Sort sort = null;
+        Sort sort;
         Query query = new Query();
         switch (getProfileType()) {
-            case "Chase_SAV", "Chase_CHK" -> {
-                sort = Sort.by(Sort.Direction.ASC, "s_posting_Date").and(Sort.by(Sort.Direction.ASC, "s_type"));
-            }
-            case "SBI_SAV" -> {
-                sort = Sort.by(Sort.Direction.ASC, "s_Txn_Date").and(Sort.by(Sort.Direction.DESC, "s_Credit"));
-            }
-            default -> {
-                throw new FinanceDataException("No sort query is defined: " + getProfileType());
-            }
+            case "Chase_SAV", "Chase_CHK" ->
+                    sort = Sort.by(Sort.Direction.ASC, "s_posting_Date").and(Sort.by(Sort.Direction.ASC, "s_type"));
+            case "SBI_SAV" ->
+                    sort = Sort.by(Sort.Direction.ASC, "s_Txn_Date").and(Sort.by(Sort.Direction.DESC, "s_Credit"));
+            default -> throw new FinanceDataException("No sort query is defined: " + getProfileType());
         }
         return query.with(sort);
     }
@@ -174,6 +143,44 @@ public class BankAccountCollection extends AccountCollection {
         this.setBalanceCalculated(Boolean.FALSE);
 
         accountBalance = BigDecimal.ZERO;
+    }
+
+    @Override
+    public CsvToBean<AccountStatementTransaction> getCsvStatementMapperToBean(InputStreamReader reader) {
+        switch (getProfileType()) {
+            case "Chase_SAV", "Chase_CHK" -> {
+                MappingStrategy<ChaseBankingAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<ChaseBankingAccountStatementTransaction>()
+                        .withForceCorrectRecordLength(true).build();
+                headerColumnNameMappingStrategy.setProfile(getProfileType());
+                headerColumnNameMappingStrategy.setType(ChaseBankingAccountStatementTransaction.class);
+                return new CsvToBeanBuilder<AccountStatementTransaction>(
+                        reader)
+                        .withProfile(getProfileType())
+                        .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
+                        .withMappingStrategy(headerColumnNameMappingStrategy)
+                        .build();
+
+            }
+            case "SBI_SAV" -> {
+                MappingStrategy<SbiBankingAccountStatementTransaction> headerColumnNameMappingStrategy = new HeaderColumnNameMappingStrategyBuilder<SbiBankingAccountStatementTransaction>()
+                        .withForceCorrectRecordLength(true).build();
+                headerColumnNameMappingStrategy.setProfile(getProfileType());
+                headerColumnNameMappingStrategy.setType(SbiBankingAccountStatementTransaction.class);
+                return new CsvToBeanBuilder<AccountStatementTransaction>(
+                        reader)
+                        .withProfile(getProfileType())
+                        .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
+                        .withMappingStrategy(headerColumnNameMappingStrategy)
+                        .build();
+
+            }
+            default -> {
+                log.error("No Maping strategy defined for :" + getProfileType());
+//                throw new FinanceDataException("No Maping strategy defined for :" + getProfileType());
+                return null;
+            }
+
+        }
     }
 
 }

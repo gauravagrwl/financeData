@@ -1,6 +1,6 @@
 package org.gauravagrwl.financeData.model.accountCollection;
 
-import com.opencsv.bean.MappingStrategy;
+import com.opencsv.bean.CsvToBean;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -47,12 +48,12 @@ public class AssetsAccountCollection extends AccountCollection {
 //    }
 
     @Override
-    public MappingStrategy<? extends AccountStatementTransaction> getHeaderColumnNameModelMappingStrategy() {
+    public Update updateAccountBalanceDefination() {
         return null;
     }
 
     @Override
-    public Update updateAccountBalanceDefination() {
+    public CsvToBean<AccountStatementTransaction> getCsvStatementMapperToBean(InputStreamReader reader) {
         return null;
     }
 

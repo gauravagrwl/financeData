@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/profileAccount")
@@ -86,6 +87,12 @@ public class AccountController {
         List<AccountCollection> userAccounts = accountService.getUserAccounts(userName);
         userAccounts.forEach(account -> account
                 .setAccountNumber(FinanceDataHelper.getAccountDisplayNumber(account.getAccountNumber())));
+        if (null != instCategory) {
+            userAccounts = userAccounts.stream().filter(a -> a.getInstitutionCategory().compareTo(instCategory) == 0).collect(Collectors.toList());
+        }
+        if (null != accountType) {
+            userAccounts = userAccounts.stream().filter(a -> a.getAccountType().compareTo(accountType) == 0).collect(Collectors.toList());
+        }
         return ResponseEntity.ok(userAccounts);
     }
 

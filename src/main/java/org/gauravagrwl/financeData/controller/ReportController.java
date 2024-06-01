@@ -54,17 +54,23 @@ public class ReportController {
             }
             return ResponseEntity.ok(cashFlowReport);
         }
+    }
 
-//    @GetMapping("/getUserHoldings")
-//    public ResponseEntity<?> getUserHoldings(@RequestParam(required = true) String userName) {
-//        List<AccountCollection> userAccounts = accountService.getUserAccounts(userName);
-//        List<AccountCollection> accountCollections = userAccounts.stream().filter(a -> a.getInstitutionCategory().compareTo(InstitutionCategoryEnum.INVESTMENT) == 0).collect(Collectors.toList());
-//        List<ReportCollection> holdingList = new ArrayList<>();
-//        for (AccountCollection invAccount : accountCollections) {
-//            holdingList.addAll(reportService.getAccountReports(invAccount.getAccountReportCollectionName()));
-//        }
-//        return ResponseEntity.ok(holdingList);
-//    }
+    @GetMapping("/getUserHoldings")
+    public ResponseEntity<?> getUserHoldings(@RequestParam(required = true) String userName,
+                                             @RequestParam(required = true) String accountId) {
+        List<AccountCollection> userAccounts = accountService.getUserAccounts(userName);
+        List<AccountCollection> accountCollections = userAccounts.stream()
+                .filter(a -> a.getInstitutionCategory()
+                        .compareTo(InstitutionCategoryEnum.INVESTMENT) == 0)
+                .filter(a -> a.getId().equalsIgnoreCase(accountId))
+                .collect(Collectors.toList());
+        List<ReportCollection> holdingList = new ArrayList<>();
+        for (AccountCollection invAccount : accountCollections) {
+            holdingList.addAll(reportService.getAccountReports(invAccount.getAccountReportCollectionName()));
+        }
+        return ResponseEntity.ok(holdingList);
+    }
 //
 //    @GetMapping("/getAssetsReport")
 //    public ResponseEntity<?> getAssetsReport(@RequestParam(required = true) String userName) {
@@ -77,5 +83,5 @@ public class ReportController {
 //        return ResponseEntity.ok(assetsReports);
 //    }
 
-    }
 }
+

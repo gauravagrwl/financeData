@@ -1,8 +1,6 @@
 package org.gauravagrwl.financeData.controller;
 
 import com.opencsv.bean.CsvToBean;
-import com.opencsv.bean.CsvToBeanBuilder;
-import com.opencsv.bean.MappingStrategy;
 import org.gauravagrwl.financeData.model.accountCollection.AccountCollection;
 import org.gauravagrwl.financeData.model.accountTransStatement.AccountStatementTransaction;
 import org.gauravagrwl.financeData.service.AccountService;
@@ -53,21 +51,14 @@ public class UploadController {
         }
         AccountCollection accountCollection = accountService.getAccountDetails(accountId, userName);
 
-        List<AccountStatementTransaction> statementModelList = new ArrayList<>();
-
-        MappingStrategy<? extends AccountStatementTransaction> headerColumnNameModelMappingStrategy = accountCollection.getHeaderColumnNameModelMappingStrategy();
+        List<AccountStatementTransaction> transactionModelList = new ArrayList<>();
         InputStreamReader reader = new InputStreamReader(file.getInputStream());
 
-        CsvToBean<AccountStatementTransaction> csvToBean = new CsvToBeanBuilder<AccountStatementTransaction>(
-                reader)
-                .withProfile(accountCollection.getProfileType())
-                .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
-                .withMappingStrategy(headerColumnNameModelMappingStrategy)
-                .build();
-        csvToBean.iterator().forEachRemaining(statementModelList::add);
+        CsvToBean<AccountStatementTransaction> csvToBean = accountCollection.getCsvStatementMapperToBean(reader);
+        csvToBean.iterator().forEachRemaining(transactionModelList::add);
 
 //Insert Statment as it is..
-        accountTransactionService.saveAccountStatementModelList(statementModelList, accountCollection);
+        accountTransactionService.saveAccountTransactionList(transactionModelList, accountCollection);
         financeDataSyncService.calculateUpdateAccountStatement(accountCollection);
         financeDataSyncService.calculateUpdateAccountReport(accountCollection);
         return ResponseEntity.ok("Account statement updated for account id : " + accountId);

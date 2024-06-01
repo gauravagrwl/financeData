@@ -12,7 +12,7 @@ public abstract class StatementModel {
     @MongoId
     private String id;
 
-    private String accountStatementId;
+    private String accountTransactionId;
 
     private String accountId;
 

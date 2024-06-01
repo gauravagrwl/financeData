@@ -96,9 +96,8 @@ public class CoinbaseAccountStatementTransaction extends AccountStatementTransac
         List<StatementModel> statementModelList = new ArrayList<>();
         StockInvestmentAccountStatementModel sm = new StockInvestmentAccountStatementModel();
 
-        setAccountDocumentId(accountCollection.getId());
         sm.setAccountId(accountCollection.getId());
-        sm.setAccountStatementId(getId());
+        sm.setAccountTransactionId(getId());
 
         sm.setC_transaction_dateTime(s_timestamp);
         sm.setC_instrument(s_asset);
@@ -124,7 +123,7 @@ public class CoinbaseAccountStatementTransaction extends AccountStatementTransac
                     ca.setAccountId(accountCollection.getId());
                     ca.setC_transaction_dateTime(s_timestamp);
                     ca.setC_description(s_notes);
-                    ca.setAccountStatementId(getId());
+                    ca.setAccountTransactionId(getId());
                     ca.setC_amount(purchase_quantity);
                     ca.setC_trans_code(TransactionKindEnum.Deposit);
                     statementModelList.add(ca);
@@ -148,7 +147,7 @@ public class CoinbaseAccountStatementTransaction extends AccountStatementTransac
                 sm.setC_trans_code(TransactionKindEnum.Sell);
                 StockInvestmentAccountStatementModel ca = new StockInvestmentAccountStatementModel();
                 ca.setAccountId(accountCollection.getId());
-                ca.setAccountStatementId(getId());
+                ca.setAccountTransactionId(getId());
                 ca.setC_trans_code(TransactionKindEnum.Buy);
                 ca.setC_transaction_dateTime(s_timestamp);
                 ca.setC_instrument(new_instrument);
