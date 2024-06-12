@@ -13,12 +13,13 @@ public class CsvAmountStringToBigDecimalConverter extends AbstractBeanField<Stri
 
     @Override
     protected Object convert(String value) throws CsvDataTypeMismatchException, CsvConstraintViolationException {
+        log.info(value);
         Boolean isNegative = false;
         if (value.contains("(") || value.contains(")")) {
             log.info("Negative number: " + value);
             isNegative = true;
         }
-        value = value.replaceAll("[^-1234567890.]", "");
+        value = value.replaceAll("[^1234567890.]", "");
         if (StringUtils.isEmpty(value) || StringUtils.equals("-", value)) {
             return BigDecimal.ZERO;
         } else {

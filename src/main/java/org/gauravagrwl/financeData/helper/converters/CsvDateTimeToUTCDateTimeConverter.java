@@ -49,14 +49,5 @@ public class CsvDateTimeToUTCDateTimeConverter extends AbstractBeanField<String,
             ZonedDateTime zdt = ldt.atZone(ZoneId.of("UTC"));
             return zdt;
         }
-
-
-//        if (value.contains("T")) {
-//            return LocalDateTime.parse(value);
-//        } else {
-//            String v = StringUtils.replace(value, " ", "T");
-//            return LocalDateTime.parse(v).atOffset(ZoneOffset.UTC).toLocalDateTime();
-//        }
-
     }
 }
