@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @Slf4j
@@ -27,7 +26,8 @@ public class BankAccountService {
     MongoTemplate template;
 
     public void deleteBankAccountStatement(UserAccount userAccount, String accountStatementId) {
-        DuplicateStatementRecords duplicateStatementRecord = getDuplicateRecordsOfStatement(userAccount, accountStatementId);
+        DuplicateStatementRecords duplicateStatementRecord = getDuplicateRecordsList(userAccount).stream().filter(r -> r.getIds().contains(accountStatementId)).findFirst().get();
+        ;
         BankAccountStatement accountStatement = template.findOne(FinanceAppQuery.findByIdQuery(accountStatementId), BankAccountStatement.class);
         String accountTransactionId = accountStatement.getAccountTransactionId();
         String reportId = accountStatement.getReportStatement().getId();
@@ -51,14 +51,12 @@ public class BankAccountService {
         List<BankAccountStatement> accountStatementList =
                 template.find(FinanceAppQuery.findAndSortAllBankStatementQuery(userAccount.getId()), BankAccountStatement.class);
         BigDecimal transactionBalance = BigDecimal.ZERO.setScale(2);
-        AtomicLong count = new AtomicLong(0);
         for (BankAccountStatement statement : accountStatementList) {
             if (statement.getType().equalsIgnoreCase("Cr.")) {
                 transactionBalance = transactionBalance.add(statement.getAmount());
             } else {
                 transactionBalance = transactionBalance.subtract(statement.getAmount());
             }
-            statement.setSno(count.incrementAndGet());
             statement.setTransactionBalance(transactionBalance);
             UpdateDefinition updateDefinition = Update.update("transactionBalance", transactionBalance);
             UpdateResult updateResult = template.updateFirst(FinanceAppQuery.findByIdQuery(statement.getId()), updateDefinition, BankAccountStatement.class);
@@ -96,12 +94,6 @@ public class BankAccountService {
         return report;
     }
 
-    private DuplicateStatementRecords getDuplicateRecordsOfStatement(UserAccount userAccount, String accountStatementId) {
-        Aggregation duplicateRecordAggregation = FinanceAppQuery.findDuplicateTransactionAggregationQuery(userAccount);
-        log.info(duplicateRecordAggregation.toString());
-        return template.aggregate(duplicateRecordAggregation, BankAccountStatement.class, DuplicateStatementRecords.class).getMappedResults()
-                .stream().filter(r -> r.getIds().contains(accountStatementId)).findFirst().get();
-    }
 
     public void updateDuplicateBankRecords(UserAccount userAccount) {
         List<DuplicateStatementRecords> duplicateRecordsList = getDuplicateRecordsList(userAccount);

@@ -40,6 +40,13 @@ public class BankAccount extends UserAccount {
                         reader)
                         .withProfile(getProfileType())
                         .withSeparator(',').withIgnoreLeadingWhiteSpace(true)
+                        .withFilter(strings -> {
+                            // If first field is not date do not process that line.
+                            if (strings[0].length() < 4) {
+                                return false;
+                            }
+                            return true;
+                        })
                         .withMappingStrategy(headerColumnNameMappingStrategy)
                         .build();
             }

@@ -66,4 +66,8 @@ public class FinanceAppQuery {
         }
     }
 
+    public static Query findAndSortAllInvestmentStatementQuery(String accountId) {
+        Sort sort = Sort.by(Sort.Direction.ASC, "transactionDate").and(Sort.by(Sort.Direction.ASC, "transactionType"));
+        return new Query(Criteria.where("accountId").is(accountId)).with(sort);
+    }
 }

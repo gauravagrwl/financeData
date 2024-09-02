@@ -1,5 +1,7 @@
 package org.gauravagrwl.financeData.configuration;
 
+import org.gauravagrwl.financeData.helper.converters.BigDecimalReadConverter;
+import org.gauravagrwl.financeData.helper.converters.BigDecimalWriteConverter;
 import org.gauravagrwl.financeData.helper.converters.ZonedDateTimeReadConverter;
 import org.gauravagrwl.financeData.helper.converters.ZonedDateTimeWriteConverter;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -68,8 +70,8 @@ public class FinanceDataConfiguration {
     @Bean
     public MongoCustomConversions mongoCustomConversions() {
         return new MongoCustomConversions(Arrays.asList(
-//                new BigDecimalWriteConverter(),
-//                new BigDecimalReadConverter(),
+                new BigDecimalWriteConverter(),
+                new BigDecimalReadConverter(),
                 new ZonedDateTimeWriteConverter(),
                 new ZonedDateTimeReadConverter()
 

@@ -15,9 +15,6 @@ public abstract class AccountStatement implements AccountStatementOperation {
     @MongoId
     private String id;
 
-    @Indexed
-    private Long Sno;
-
     @NotBlank
     @Indexed
     private String accountId;

@@ -31,12 +31,8 @@ public class InvestmentAccountStatement extends AccountStatement {
     private BigDecimal fee;
 
     @ReadOnlyProperty
-    @DocumentReference(lookup = "{'accountStatementId':?#{#self._id} }", collection = "CashFlowStatements")
+    @DocumentReference(lookup = "{'accountStatementId':?#{#self._id} }", collection = "HoldingReportStatement")
     private ReportStatement reportStatement;
 
 
-    @Override
-    public ReportStatement getReportStatement() {
-        return null;
-    }
 }

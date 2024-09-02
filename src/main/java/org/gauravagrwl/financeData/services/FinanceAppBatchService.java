@@ -63,7 +63,7 @@ public class FinanceAppBatchService {
                 log.info("Identify duplicate records from statement for Investment Account: {}", userAccount.getAccountDisplayName());
                 investmentAccountService.updateDuplicateInvestmentRecords(userAccount);
                 log.info("Updating account Report for Investment Account: {}", userAccount.getAccountDisplayName());
-                investmentAccountService.insertBankAccountReportStatement(userAccount);
+                investmentAccountService.insertInvestmentAccountReportStatement(userAccount);
             }
             default ->
                     throw new FinanceAppException("No Switch statement defined for : {}", userAccount.getInstitutionCategory().getCategoryName());

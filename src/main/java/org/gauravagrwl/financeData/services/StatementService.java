@@ -13,7 +13,7 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class AccountStatementService {
+public class StatementService {
     @Autowired
     MongoTemplate template;
 

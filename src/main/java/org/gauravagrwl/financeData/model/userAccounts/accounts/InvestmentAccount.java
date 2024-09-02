@@ -21,6 +21,7 @@ public class InvestmentAccount extends UserAccount {
 
     private BigDecimal cashInvested = BigDecimal.ZERO.setScale(2);
     private BigDecimal amountInvested = BigDecimal.ZERO.setScale(2);
+    private BigDecimal optionReturn = BigDecimal.ZERO.setScale(2);
 
     private BigDecimal cashReturn = BigDecimal.ZERO.setScale(2);
 
@@ -37,6 +38,7 @@ public class InvestmentAccount extends UserAccount {
                         reader)
                         .withProfile(getProfileType())
                         .withSeparator(',').withIgnoreLeadingWhiteSpace(true).withIgnoreEmptyLine(Boolean.TRUE)
+                        // If first field is not date do not process that line.
                         .withFilter(strings -> {
                             if (strings[0].length() < 4) {
                                 return false;

@@ -18,14 +18,19 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping(value = "/accounts")
 @Slf4j
-@Tag(name = "Account Operations")
+@Tag(name = "Account Operations", description = "User all Account type Operations.")
 public class AccountController {
 
     @Autowired
     AccountService accountService;
 
-    //TODO: 1. POST Add Single Account for a given user.
-    //TODO: 1.1 POST Add List of Accounts for a given user.
+    /**
+     * Add single user Accounts to a user profile
+     *
+     * @param username
+     * @param userAccount
+     * @return
+     */
     @PostMapping(value = "/addAccount", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> addAccount(@RequestParam(required = true) String username,
                                              @RequestBody UserAccount userAccount) {
@@ -33,6 +38,13 @@ public class AccountController {
         return ResponseEntity.ok("Account Added with Id: " + userAccountId);
     }
 
+    /**
+     * Add mulitple accounts to a user profile.
+     *
+     * @param username
+     * @param userAccounts
+     * @return
+     */
     @PostMapping(value = "/addAccounts", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Map<String, String>> addAccounts(@RequestParam(required = true) String username,
                                                            @RequestBody List<UserAccount> userAccounts) {
@@ -49,9 +61,13 @@ public class AccountController {
         return ResponseEntity.ok(result);
     }
 
-
-    //TODO: 2. GET List of Accounts for a given user.
-    //TODO: 2.1 GET Single Account for a given user by accountId.
+    /**
+     * Get single user account based on id.
+     *
+     * @param username
+     * @param accountId
+     * @return
+     */
     @GetMapping(value = "/getAccount", produces = "application/json")
     public ResponseEntity<?> getProfileAccount(
             @RequestParam(name = "username", required = true) String username,
@@ -60,6 +76,14 @@ public class AccountController {
         return ResponseEntity.ok(accountDocument);
     }
 
+    /**
+     * Get all accounts associated of the users.
+     *
+     * @param username
+     * @param instCategory
+     * @param accountType
+     * @return
+     */
     @GetMapping(value = "/getAccounts", produces = "application/json")
     public ResponseEntity<?> getProfileAccounts(
             @RequestParam(name = "username", required = true) String username,
@@ -75,6 +99,24 @@ public class AccountController {
         return ResponseEntity.ok(userAccounts);
     }
 
-    //TODO: 3. PUT modify Account for a given user.
-    //TODO: 4. POST DELETE Account for a given user.
+    /**
+     * Method to Modify the accounts
+     *
+     * @param username
+     * @param userAccount
+     * @return
+     */
+    @PatchMapping(value = "/updateAccount", produces = "application/json")
+    public ResponseEntity<?> updateProfileAccounts(
+            @RequestParam(name = "username", required = true) String username,
+            @RequestBody UserAccount userAccount) {
+        return ResponseEntity.ok(userAccount);
+    }
+
+    @DeleteMapping(value = "/deleteAccount", produces = "application/json")
+    public ResponseEntity<?> deleteProfileAccounts(
+            @RequestParam(name = "username", required = true) String username,
+            @RequestParam(name = "accountId", required = true) String accountId) {
+        return ResponseEntity.ok("Account Deleted");
+    }
 }

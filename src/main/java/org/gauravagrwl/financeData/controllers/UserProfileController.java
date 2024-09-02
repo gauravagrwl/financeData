@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/userProfile")
 @Slf4j
-@Tag(name = "User Operations")
+@Tag(name = "User Operations", description = "User operations who holds the accounts.")
 public class UserProfileController {
 
     //TODO: 1. POST Create user profile
@@ -30,6 +30,16 @@ public class UserProfileController {
     @GetMapping(value = "/getUserProfile", produces = "application/json")
     public ResponseEntity<?> getProfile(@RequestParam String userName) {
         return ResponseEntity.ok(userProfileService.getUserProfile(userName));
+    }
+
+    @PatchMapping(value = "/updateUserProfile", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<String> updateProfile(@RequestBody UserProfile userProfile) {
+        return ResponseEntity.ok("Profile modified");
+    }
+
+    @DeleteMapping(value = "/deleteUserProfile")
+    public ResponseEntity<?> deleteUserProfile(@RequestParam(name = "accountId", required = true) String userProfile) {
+        return ResponseEntity.ok("Profile Deleted");
     }
 
 

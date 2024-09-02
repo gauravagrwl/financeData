@@ -1,15 +1,19 @@
 package org.gauravagrwl.financeData.controllers;
 
 import com.opencsv.bean.CsvToBean;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.model.userAccounts.accounts.UserAccount;
 import org.gauravagrwl.financeData.model.userAccounts.transactions.AccountTransaction;
 import org.gauravagrwl.financeData.services.AccountService;
-import org.gauravagrwl.financeData.services.AccountStatementService;
 import org.gauravagrwl.financeData.services.FinanceAppBatchService;
+import org.gauravagrwl.financeData.services.StatementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -17,30 +21,22 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-
-/**
- * User uploaded Account statements.
- */
 @RestController
-@RequestMapping(value = "/accountStatements")
+@RequestMapping(value = "/uploadTransactions")
 @Slf4j
-public class AccountStatementController {
+@Tag(name = "Upload Transactions", description = "Upload account transaction document downloaded from Account Website.")
+public class UploadController {
 
     @Autowired
     AccountService accountService;
 
     @Autowired
-    FinanceAppBatchService batchService;
+    StatementService statementService;
 
     @Autowired
-    AccountStatementService accountStatementService;
+    FinanceAppBatchService batchService;
 
-    //TODO: 1. POST AccountTransaction for a given account.
-    //TODO: 2. GET AccountTransaction for a given account.
-    //TODO: 3. PUT modify AccountTransaction for a given account.
-    //TODO: 4. POST DELETE AccountTransaction for a given account.
-
-    @PostMapping("/addAccountTransactions")
+    @PostMapping("/uploadAccountTransactions")
     public ResponseEntity<String> addAccountTransactions(
             @RequestParam(name = "username", required = true) String username,
             @RequestParam(name = "accountId", required = true) String accountId,
@@ -60,23 +56,8 @@ public class AccountStatementController {
         CsvToBean<AccountTransaction> csvToBean = userAccount.getCsvTransactionMapperToBean(reader);
         csvToBean.iterator().forEachRemaining(transactionsList::add);
 
-        accountStatementService.insertAccountTransactions(transactionsList, userAccount);
+        statementService.insertAccountTransactions(transactionsList, userAccount);
         batchService.runSchedule();
         return ResponseEntity.ok("Account statement updated for account id : " + accountId);
     }
-
-    @DeleteMapping("/deleteAccountTransaction")
-    public ResponseEntity<String> deleteAccountTransaction(
-            @RequestParam(name = "username", required = true) String username,
-            @RequestParam(name = "accountId", required = true) String accountId,
-            @RequestParam(name = "statementId", required = true) String statementId) {
-
-        UserAccount userAccount = accountService.getAccountDetails(accountId, username);
-
-        accountStatementService.deleteAccountTransaction(userAccount, statementId);
-
-        return ResponseEntity.ok(String.format("Account Statement Id: %s deleted for account id : %s", statementId, accountId));
-    }
-
-
 }
