@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 
 public interface UserAccountOperations {
     /**
-     * Get CSV Mapper for individual Account Transactions.
      *
      * @param reader
      * @return

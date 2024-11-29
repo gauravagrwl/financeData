@@ -3,7 +3,14 @@ package org.gauravagrwl.financeData.helper;
 import org.apache.commons.lang3.StringUtils;
 import org.gauravagrwl.financeData.model.userAccounts.accounts.UserAccount;
 
-public class FinanceAppHelper {
+import java.util.Currency;
+
+public final class FinanceAppHelper {
+
+    public static final int cryptoScale = 10;
+    public static final int currencyScale = 2;
+    public static final Currency currencyUSD = Currency.getInstance("USD");
+    public static final Currency currencyINR = Currency.getInstance("USD");
 
     public static String getAccountDisplayName(UserAccount userAccount) {
         return StringUtils.join(getAccountProfileName(userAccount), "_", StringUtils.right(userAccount.getAccountNumber(), 3));

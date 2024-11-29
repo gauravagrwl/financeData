@@ -4,6 +4,7 @@ import com.mongodb.client.result.UpdateResult;
 import lombok.extern.slf4j.Slf4j;
 import org.gauravagrwl.financeData.exceptions.FinanceAppException;
 import org.gauravagrwl.financeData.helper.DuplicateStatementRecords;
+import org.gauravagrwl.financeData.helper.FinanceAppHelper;
 import org.gauravagrwl.financeData.helper.FinanceAppQuery;
 import org.gauravagrwl.financeData.helper.InvestmentBalanceCalculatedRecords;
 import org.gauravagrwl.financeData.helper.enums.TransactionType;
@@ -37,39 +38,86 @@ public class InvestmentAccountService {
     @Autowired
     MongoTemplate template;
 
-    public void updateInvestmentAccountStatementDetails(UserAccount userAccount) {
+    /**
+     * Need to calculate account statment
+     *
+     * @param userAccount
+     */
+    public void updateInvestmentAccountDetails(UserAccount userAccount) {
         List<InvestmentBalanceCalculatedRecords> records = investmentBalanceAggregationQuery(userAccount).getMappedResults();
-        BigDecimal cashInvested = BigDecimal.ZERO.setScale(2);
-        BigDecimal amountInvested = BigDecimal.ZERO.setScale(2);
-        BigDecimal cashReturn = BigDecimal.ZERO.setScale(2);
-        BigDecimal amountReturn = BigDecimal.ZERO.setScale(2);
-        BigDecimal optionReturn = BigDecimal.ZERO.setScale(2);
+        BigDecimal cashInvested = BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP);
+        BigDecimal amountInvested = BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP);
+        BigDecimal cashReturn = BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP);
+        BigDecimal amountReturn = BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP);
+        BigDecimal optionReturn = BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP);
+        BigDecimal otherCharges = BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP);
         for (InvestmentBalanceCalculatedRecords record : records) {
+            log.info("updateInvestmentAccountDetails: {}", record.toString());
             TransactionType type = TransactionType.valueOf(record.getId());
             switch (type) {
-                case Buy -> amountInvested = amountInvested.add(record.getTotal());
-                case Sell -> amountReturn = amountReturn.add(record.getTotal());
-                case Deposit -> cashInvested = cashInvested.add(record.getTotal());
-                case Withdrawal -> cashReturn = cashReturn.add(record.getTotal());
-                case Failed -> cashInvested = cashInvested.subtract(record.getTotal());
-                case OBTC -> optionReturn = optionReturn.subtract(record.getTotal());
-                case OSTO -> optionReturn = optionReturn.add(record.getTotal());
-                case Cancel, Earn, OEXP, OASGN, TAX, Charge -> log.info("Need to decide");
+                case DEPOSIT -> {
+                    cashInvested = cashInvested.add(record.getTotal());
+                }
+                case WITHDRAWAL -> {
+                    cashReturn = cashReturn.add(record.getTotal());
+                }
+                case FAILED -> {
+                    cashInvested = cashInvested.subtract(record.getTotal());
+                }
+                case BUY -> {
+                    amountInvested = amountInvested.add(record.getTotal());
+                }
+                case OBTC -> {
+                    optionReturn = optionReturn.subtract(record.getTotal());
+                }
+                case SELL -> {
+                    amountReturn = amountReturn.add(record.getTotal());
+                }
+                case OSTO -> {
+                    optionReturn = optionReturn.add(record.getTotal());
+                }
+                case EARN -> {
+                    amountReturn = amountReturn.add(record.getTotal());
+                }
+                case EARN_REVERT -> {
+                    amountReturn = amountReturn.subtract(record.getTotal());
+                }
+                case CHARGES -> {
+                    otherCharges = otherCharges.add(record.getTotal());
+                }
+
+                case OTHERS -> {
+                    log.info("Need to decide");
+                }
+                case CANCEL -> {
+                    log.info("Need to decide");
+                }
+                case STAKE_DEPOSIT -> {
+                    log.info("Need to decide");
+                }
+                case STAKE_WITHDRAWAL -> {
+                    log.info("Need to decide");
+                }
                 default -> throw new FinanceAppException("No transaction type defined for: {}", type.name());
             }
         }
+        BigDecimal netCashProfitLoss = cashReturn.subtract(cashInvested);
+        BigDecimal netAmountProfitLoss = amountReturn.subtract(amountInvested);
         UpdateDefinition updateDefinition = Update.update("cashInvested", cashInvested)
                 .set("amountInvested", amountInvested)
-                .set("optionReturn", optionReturn)
+                .set("optionStakeReturn", optionReturn)
                 .set("cashReturn", cashReturn)
-                .set("amountReturn", amountReturn);
+                .set("amountReturn", amountReturn)
+                .set("netAmountProfitLoss", netAmountProfitLoss)
+                .set("otherCharges", otherCharges)
+                .set("netCashProfitLoss", netCashProfitLoss);
         UpdateResult updateResult = template.updateFirst(FinanceAppQuery.findByIdQuery(userAccount.getId()), updateDefinition, UserAccount.class);
         log.info("Account Balance Updated {}", updateResult.wasAcknowledged());
     }
 
     public void insertInvestmentAccountReportStatement(UserAccount userAccount) {
         List<InvestmentAccountStatement> accountStatementList =
-                template.find(FinanceAppQuery.findAndSortAllInvestmentStatementQuery(userAccount.getId()), InvestmentAccountStatement.class);
+                template.find(FinanceAppQuery.findAndSortAllInvestmentStatementQuery(userAccount), InvestmentAccountStatement.class);
         List<InvestmentAccountStatement> accountStatementForProcessingList = accountStatementList.stream()
                 .filter(
                         accountStatement ->
@@ -77,21 +125,31 @@ public class InvestmentAccountService {
                 ).toList();
 
         Map<String, List<InvestmentAccountStatement>> groupByInstrument = accountStatementForProcessingList
-                .stream()
-                .collect(Collectors.groupingBy(investmentAccountStatement -> investmentAccountStatement.getInstrument()));
+                .stream().filter(s -> null != s.getInstrument())
+                .collect(Collectors.groupingBy(InvestmentAccountStatement::getInstrument));
 
         List<HoldingReportStatement> holdingReportStatementList = new ArrayList<>();
+
         groupByInstrument.forEach((s, investmentAccountStatements) -> {
             if (!s.isBlank()) {
-                HoldingReportStatement holdingReportStatement = new HoldingReportStatement();
-                holdingReportStatement.setAccountId(userAccount.getId());
-                holdingReportStatement.setInstrument(s);
-                holdingReportStatement.setAccountStatementId(investmentAccountStatements.stream().map(InvestmentAccountStatement::getId).collect(Collectors.toList()));
+                HoldingReportStatement holdingReportStatement = template.findOne(FinanceAppQuery.findByInstrumentName(s), HoldingReportStatement.class);
+                if (holdingReportStatement == null) {
+                    holdingReportStatement = new HoldingReportStatement();
+                    holdingReportStatement.setAccountId(userAccount.getId());
+                    holdingReportStatement.setInstrument(s);
+                }
+                holdingReportStatement.getAccountStatementIdList().addAll(investmentAccountStatements.stream().map(InvestmentAccountStatement::getId).toList());
                 updateHoldingRecords(holdingReportStatement);
                 holdingReportStatementList.add(holdingReportStatement);
             }
         });
+        //TODO: Get Holding Report Statement if holding is already added.
         for (HoldingReportStatement holdingReportStatement : holdingReportStatementList) {
+            if (holdingReportStatement.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
+                holdingReportStatement.setAmount(BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP));
+                holdingReportStatement.setAvgBuyPrice(BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP));
+                holdingReportStatement.setQuantity(BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP));
+            }
             template.insert(holdingReportStatement);
 
         }
@@ -132,16 +190,16 @@ public class InvestmentAccountService {
         DuplicateStatementRecords duplicateStatementRecord = getDuplicateRecordsList(userAccount).stream().filter(r -> r.getIds().contains(accountStatementId)).findFirst().get();
 
         InvestmentAccountStatement accountStatement = template.findOne(FinanceAppQuery.findByIdQuery(accountStatementId), InvestmentAccountStatement.class);
-        String accountTransactionId = accountStatement.getAccountTransactionId();
+        String accountTransactionId = "1111";
         template.remove(FinanceAppQuery.findByIdQuery(accountTransactionId), AccountTransaction.class, userAccount.getAccountTransactionCollectionName());
 
         String reportId = accountStatement.getReportStatement().getId();
         HoldingReportStatement holdingReportStatement = template.findOne(FinanceAppQuery.findByIdQuery(reportId), HoldingReportStatement.class);
-        holdingReportStatement.getAccountStatementId().remove(accountStatementId);
+        holdingReportStatement.getAccountStatementIdList().remove(accountStatementId);
 
         template.remove(FinanceAppQuery.findByIdQuery(accountStatementId), BankAccountStatement.class);
         updateHoldingRecords(holdingReportStatement);
-        updateInvestmentAccountStatementDetails(userAccount);
+        updateInvestmentAccountDetails(userAccount);
 
         if (duplicateStatementRecord.getCount() == 2) {
             duplicateStatementRecord.getIds().remove(accountStatementId);
@@ -155,23 +213,71 @@ public class InvestmentAccountService {
 
     private void updateHoldingRecords(HoldingReportStatement holdingReportStatement) {
         //TODO: Calculate the average cost and other details of that holding.
-        for (String statementId : holdingReportStatement.getAccountStatementId()) {
+        for (String statementId : holdingReportStatement.getAccountStatementIdList()) {
             InvestmentAccountStatement statement = template.findOne(FinanceAppQuery.findByIdQuery(statementId), InvestmentAccountStatement.class);
+            log.info("Processing Holding details for: {}", statement.toString());
             switch (statement.getTransactionType()) {
-                case Buy -> {
+                case BUY -> {
+                    if (holdingReportStatement.getQuantity().compareTo(BigDecimal.ZERO) == 0) {
+                        holdingReportStatement.setAvgBuyPrice(BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP));
+                        holdingReportStatement.setAmount(BigDecimal.ZERO.setScale(FinanceAppHelper.currencyScale, RoundingMode.UP));
+                    }
                     holdingReportStatement.setQuantity(holdingReportStatement.getQuantity().add(statement.getQuantity()));
-                    holdingReportStatement.setAmount(holdingReportStatement.getAmount().add(statement.getAmount()));
-                    holdingReportStatement.setPrice(holdingReportStatement.getAmount().divide(holdingReportStatement.getQuantity(), RoundingMode.HALF_UP));
+                    holdingReportStatement.setAmount(holdingReportStatement.getAmount().add(statement.getAmount()).add(statement.getFee()));
+                    holdingReportStatement.setAvgBuyPrice(holdingReportStatement.getAmount().divide(holdingReportStatement.getQuantity(), RoundingMode.HALF_UP));
+                    holdingReportStatement.setProfitLoss(statement.getAmount().subtract(holdingReportStatement.getAmount()));
                 }
+                case SELL -> {
+                    holdingReportStatement.setProfitLoss(statement.getAmount().subtract(holdingReportStatement.getAmount()));
+                    holdingReportStatement.setQuantity(holdingReportStatement.getQuantity().subtract(statement.getQuantity()));
+                    holdingReportStatement.setAmount(holdingReportStatement.getAmount().subtract(statement.getAmount()));
+
+                }
+                case OBTC -> {
+                    // Option Buy to close open Sell - Call contract.
+                    holdingReportStatement.setAmount(holdingReportStatement.getAmount().add(statement.getAmount()));
+                    holdingReportStatement.setOptionEarning(holdingReportStatement.getOptionEarning().subtract(statement.getAmount()));
+                }
+                case OSTO -> {
+                    // Option Sell - Call contract.
+                    holdingReportStatement.setAmount(holdingReportStatement.getAmount().subtract(statement.getAmount()));
+                    holdingReportStatement.setOptionEarning(holdingReportStatement.getOptionEarning().add(statement.getAmount()));
+                }
+                case EARN -> {
+                    holdingReportStatement.setAmount(holdingReportStatement.getAmount().add(statement.getAmount()));
+                    holdingReportStatement.setQuantity(holdingReportStatement.getQuantity().add(statement.getQuantity()));
+
+                    holdingReportStatement.setStakeQuantity(holdingReportStatement.getStakeQuantity().add(statement.getQuantity()));
+                    holdingReportStatement.setStakeEarning(holdingReportStatement.getStakeEarning().add(statement.getAmount()));
+
+                    if (holdingReportStatement.getQuantity().compareTo(BigDecimal.ZERO) == 1)
+                        holdingReportStatement.setAvgBuyPrice(holdingReportStatement.getAmount().divide(holdingReportStatement.getQuantity(), FinanceAppHelper.currencyScale, RoundingMode.UP));
+
+                }
+                case EARN_REVERT -> {
+                    holdingReportStatement.setAmount(holdingReportStatement.getAmount().subtract(statement.getAmount()));
+                    holdingReportStatement.setQuantity(holdingReportStatement.getQuantity().subtract(statement.getQuantity()));
+
+                    holdingReportStatement.setStakeQuantity(holdingReportStatement.getStakeQuantity().subtract(statement.getQuantity()));
+                    holdingReportStatement.setStakeEarning(holdingReportStatement.getStakeEarning().subtract(statement.getAmount()));
+                    if (holdingReportStatement.getQuantity().compareTo(BigDecimal.ZERO) == 1)
+                        holdingReportStatement.setAvgBuyPrice(holdingReportStatement.getAmount().divide(holdingReportStatement.getQuantity(), FinanceAppHelper.currencyScale, RoundingMode.UP));
+
+                }
+                case STAKE_DEPOSIT -> {
+                    holdingReportStatement.setStakeQuantity(holdingReportStatement.getStakeQuantity().add(statement.getQuantity()));
+                }
+                case STAKE_WITHDRAWAL -> {
+                    holdingReportStatement.setStakeQuantity(holdingReportStatement.getStakeQuantity().subtract(statement.getQuantity()));
+                }
+
 //                    case Sell -> amountReturn = amountReturn.add(record.getTotal());
 //                    case Deposit -> cashInvested = cashInvested.add(record.getTotal());
 //                    case Withdrawal -> cashReturn = cashReturn.add(record.getTotal());
 //                    case Failed -> cashInvested = cashInvested.subtract(record.getTotal());
 //                    case OBTC -> optionReturn = optionReturn.subtract(record.getTotal());
 //                    case OSTO -> optionReturn = optionReturn.add(record.getTotal());
-                case Cancel, Earn, OEXP, OASGN, TAX, Charge -> log.info("Need to decide");
-                default ->
-                        throw new FinanceAppException("No transaction type defined for: {}", statement.getTransactionType());
+                default -> log.error("No rule define for statement: {}", statement.toString());
             }
         }
 
@@ -189,11 +295,11 @@ public class InvestmentAccountService {
 //        case Sell -> {
 //            if (totalQuantity.compareTo(s.getC_quantity()) == 0) {
 //                // Complete Sold-out
-//                profitLoss = profitLoss.add(s.getC_amount().subtract(totalAmount)).setScale(2, RoundingMode.UP);
+//                profitLoss = profitLoss.add(s.getC_amount().subtract(totalAmount)).setScale(FinanceAppHelper.currencyScale, RoundingMode.UP);
 //                averageRate = totalQuantity = totalAmount = BigDecimal.ZERO;
 //            } else if (totalQuantity.compareTo(s.getC_quantity()) == 1) {
 //                // calculate profilt on that partial sold.
-//                profitLoss = profitLoss.add(s.getC_amount().subtract(s.getC_quantity().multiply(averageRate))).setScale(2, RoundingMode.UP);
+//                profitLoss = profitLoss.add(s.getC_amount().subtract(s.getC_quantity().multiply(averageRate))).setScale(FinanceAppHelper.currencyScale, RoundingMode.UP);
 //                // Partial sold
 //                totalQuantity = totalQuantity.subtract(s.getC_quantity());
 //                totalAmount = totalQuantity.multiply(averageRate);

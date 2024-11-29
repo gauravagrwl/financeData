@@ -29,7 +29,7 @@ public class BankAccountService {
         DuplicateStatementRecords duplicateStatementRecord = getDuplicateRecordsList(userAccount).stream().filter(r -> r.getIds().contains(accountStatementId)).findFirst().get();
         ;
         BankAccountStatement accountStatement = template.findOne(FinanceAppQuery.findByIdQuery(accountStatementId), BankAccountStatement.class);
-        String accountTransactionId = accountStatement.getAccountTransactionId();
+        String accountTransactionId = accountStatement.getAccountTransactionIds().stream().findFirst().orElse("");
         String reportId = accountStatement.getReportStatement().getId();
         template.remove(FinanceAppQuery.findByIdQuery(reportId), CashFlowReportStatement.class);
         template.remove(FinanceAppQuery.findByIdQuery(accountStatementId), BankAccountStatement.class);

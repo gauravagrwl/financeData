@@ -4,7 +4,10 @@
 logging:
   level:
     root: INFO
-#    org.mongodb.driver.protocol.command: INFO
+#    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+#    org.springframework.data.mongodb: DEBUG
+
+
 
 
 spring:
@@ -24,6 +27,9 @@ server:
     context-path: /financeData
   port: 8084
 
+transactionMapping: '{  "DEPOSIT": ,
+               
+                  }'
 
 
 

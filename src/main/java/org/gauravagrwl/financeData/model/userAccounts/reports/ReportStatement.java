@@ -8,6 +8,9 @@ import org.gauravagrwl.financeData.model.common.AuditMetadata;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Getter
 @Setter
 public abstract class ReportStatement {
@@ -17,6 +20,8 @@ public abstract class ReportStatement {
 
     @NotBlank
     private String accountId;
+
+    Set<String> accountStatementIdList = new LinkedHashSet<>();
 
 
     @JsonIgnore

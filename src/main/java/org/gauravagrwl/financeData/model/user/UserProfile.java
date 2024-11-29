@@ -32,7 +32,7 @@ public class UserProfile {
     @NotBlank(message = "Last Name is Required.")
     private String lastName;
 
-    @JsonIgnore
+//    @JsonIgnore
     private String secrectKey;
 
     @NotBlank(message = "Email-Address Name is Required.")

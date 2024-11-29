@@ -6,6 +6,7 @@ import com.opencsv.bean.CsvCustomBindByName;
 import com.opencsv.bean.CsvCustomBindByNames;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.gauravagrwl.financeData.helper.FinanceAppHelper;
 import org.gauravagrwl.financeData.helper.converters.CsvAmountStringToBigDecimalConverter;
 import org.gauravagrwl.financeData.helper.converters.CsvMDYDateStringToDateConverter;
 import org.gauravagrwl.financeData.model.userAccounts.statements.AccountStatement;
@@ -15,7 +16,9 @@ import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 
 public class ChaseBankingAccountTransaction extends AccountTransaction {
     @CsvCustomBindByNames({
@@ -47,13 +50,33 @@ public class ChaseBankingAccountTransaction extends AccountTransaction {
 
     @Getter
     @ReadOnlyProperty
-    @DocumentReference(lookup = "{'accountTransactionId':?#{#self._id} }", collection = "BankAccountStatement")
-    private AccountStatement accountStatement;
+    @DocumentReference(lookup = "{'accountTransactionId':?#{#self._id} }", collection = "InvestmentAccountStatement")
+    List<AccountStatement> accountStatements;
 
     @Override
     public AccountStatement transformToStatement() {
         BankAccountStatement statement = new BankAccountStatement();
-        statement.setAccountTransactionId(getId());
+        statement.getAccountTransactionIds().add(getId());
+        statement.setAccountId(getUserAccountId());
+
+        statement.setTransactionDate(postingDate);
+        statement.setAmount(amount.abs().setScale(FinanceAppHelper.currencyScale, RoundingMode.UP));
+        if (StringUtils.isNotBlank(checkOrSlip))
+            statement.setDescription(StringUtils.join(description, "---", checkOrSlip));
+        else
+            statement.setDescription(description);
+        if (StringUtils.equalsIgnoreCase(details, "Credit")) {
+            statement.setType("Cr.");
+        } else {
+            statement.setType("Dr.");
+        }
+        return statement;
+    }
+
+    @Override
+    public List<AccountStatement> transformToStatementList() {
+        BankAccountStatement statement = new BankAccountStatement();
+        statement.getAccountTransactionIds().add(getId());
         statement.setAccountId(getUserAccountId());
 
         statement.setTransactionDate(postingDate);
@@ -67,7 +90,7 @@ public class ChaseBankingAccountTransaction extends AccountTransaction {
         } else {
             statement.setType("Dr.");
         }
-        return statement;
+        return List.of(statement);
     }
 
 

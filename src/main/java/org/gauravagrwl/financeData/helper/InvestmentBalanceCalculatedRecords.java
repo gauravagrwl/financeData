@@ -16,4 +16,11 @@ public class InvestmentBalanceCalculatedRecords {
     String id;
     BigDecimal total;
 
+    @Override
+    public String toString() {
+        return "InvestmentBalanceCalculatedRecords{" +
+                "transactionType='" + id + '\'' +
+                ", total=" + total +
+                '}';
+    }
 }

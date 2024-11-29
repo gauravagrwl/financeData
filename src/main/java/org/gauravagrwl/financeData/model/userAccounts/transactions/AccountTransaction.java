@@ -8,6 +8,8 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
+import java.util.Currency;
+
 @Getter
 @Setter
 public abstract class AccountTransaction implements AccountTransactionOperations {
@@ -17,6 +19,9 @@ public abstract class AccountTransaction implements AccountTransactionOperations
     private String id;
     @Indexed
     private String userAccountId;
+
+    private Currency currency;
+    
     private Boolean duplicateTransaction = Boolean.FALSE;
     @JsonIgnore
     private AuditMetadata audit = new AuditMetadata();

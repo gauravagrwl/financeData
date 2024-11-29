@@ -38,7 +38,7 @@ public class UserProfileController {
     }
 
     @DeleteMapping(value = "/deleteUserProfile")
-    public ResponseEntity<?> deleteUserProfile(@RequestParam(name = "accountId", required = true) String userProfile) {
+    public ResponseEntity<?> deleteUserProfile(@RequestParam(name = "userName", required = true) String userProfile) {
         return ResponseEntity.ok("Profile Deleted");
     }
 

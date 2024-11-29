@@ -26,8 +26,8 @@ import java.util.Currency;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = BankAccount.class, name = "BankAccount"),
         @JsonSubTypes.Type(value = InvestmentAccount.class, name = "InvestmentAccount"),
-//        @JsonSubTypes.Type(value = LoanAccountDocument.class, name = "LoanAccount"),
-//        @JsonSubTypes.Type(value = AssetsAccountDocument.class, name = "AssetsAccount"),
+//        @JsonSubTypes.Type(value = LoanAccount.class, name = "LoanAccount"),
+//        @JsonSubTypes.Type(value = AssetsAccount.class, name = "AssetsAccount"),
 })
 public abstract class UserAccount implements UserAccountOperations {
     @MongoId

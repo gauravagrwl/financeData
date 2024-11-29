@@ -25,10 +25,11 @@ public class StatementService {
         String accountTransactionCollectionName = userAccount.getAccountTransactionCollectionName();
         transactionsList.stream().forEach(accountTransaction -> {
             accountTransaction.setUserAccountId(userAccount.getId());
-            log.info("Account Transaction Inserted with id: %s", template.insert(accountTransaction, accountTransactionCollectionName).getId());
+            accountTransaction.setCurrency(userAccount.getInstitutionCurrency());
+            log.info("Account Transaction Inserted with id: {}", template.insert(accountTransaction, accountTransactionCollectionName).getId());
         });
         template.updateFirst(FinanceAppQuery.findByIdQuery(userAccount.getId()), FinanceAppQuery.updateBooleanValueIndicator("StartTransactionProcessing", Boolean.TRUE), UserAccount.class);
-        log.info("Transaction Records update for account: %s", userAccount.getAccountDisplayName());
+        log.info("Transaction Records update for account: {}", userAccount.getAccountDisplayName());
     }
 
     public void deleteAccountTransaction(UserAccount userAccount, String accountStatementId) {
@@ -38,7 +39,7 @@ public class StatementService {
                 bankAccountService.deleteBankAccountStatement(userAccount, accountStatementId);
             }
             default ->
-                    throw new FinanceAppException("No Switch statement defined for : %s", userAccount.getInstitutionCategory().getCategoryName());
+                    throw new FinanceAppException("No Switch statement defined for : {}", userAccount.getInstitutionCategory().getCategoryName());
         }
     }
 

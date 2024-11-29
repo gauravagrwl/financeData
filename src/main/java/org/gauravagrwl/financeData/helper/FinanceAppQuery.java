@@ -24,6 +24,11 @@ public class FinanceAppQuery {
         );
     }
 
+    public static Query findByInstrumentName(String instrumentName) {
+        return new Query(
+                Criteria.where("instrument").is(instrumentName));
+    }
+
     public static Query findByIdQuery(String id) {
         return new Query(
                 Criteria.where("id").is(id));
@@ -66,8 +71,38 @@ public class FinanceAppQuery {
         }
     }
 
-    public static Query findAndSortAllInvestmentStatementQuery(String accountId) {
-        Sort sort = Sort.by(Sort.Direction.ASC, "transactionDate").and(Sort.by(Sort.Direction.ASC, "transactionType"));
-        return new Query(Criteria.where("accountId").is(accountId)).with(sort);
+    public static Query sortAllAccountTransactionQuery(UserAccount userAccount) {
+        switch (userAccount.getProfileType()) {
+            case "Robinhood_STOCK" -> {
+                Sort sort = Sort.by(Sort.Direction.ASC, "activityDate");
+                return new Query().with(sort);
+            }
+            case "CryptoApp_CRYPTO" -> {
+                Sort sort = Sort.by(Sort.Direction.ASC, "timeStamp");
+                return new Query().with(sort);
+            }
+            default -> {
+                return new Query();
+            }
+
+
+        }
+
+    }
+
+    public static Query findAndSortAllInvestmentStatementQuery(UserAccount userAccount) {
+        switch (userAccount.getProfileType()) {
+            case "Robinhood_STOCK" -> {
+                Sort sort = Sort.by(Sort.Direction.ASC, "transactionDate").and(Sort.by(Sort.Direction.ASC, "transactionType"));
+                return new Query(Criteria.where("accountId").is(userAccount.getId())).with(sort);
+            }
+            case "CryptoApp_CRYPTO" -> {
+                Sort sort = Sort.by(Sort.Direction.ASC, "timeStamp");
+                return new Query(Criteria.where("accountId").is(userAccount.getId())).with(sort);
+            }
+            default -> {
+                throw new FinanceAppException("No profile type defined for findAndSortAllInvestmentStatementQuery");
+            }
+        }
     }
 }
